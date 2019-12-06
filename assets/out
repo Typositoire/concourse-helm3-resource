@@ -1,0 +1,258 @@
+#!/bin/bash
+
+set -e
+set -o pipefail
+
+exec 3>&1 # make stdout available as fd 3 for the result
+exec 1>&2 # redirect all output to stderr for logging
+
+# Read inputs
+source=$1
+payload=$(mktemp helm-resource-request.XXXXXX)
+cat > $payload <&0
+
+# Prepare
+setup_resource $payload $source
+echo "Resource setup successful."
+
+namespace=$(jq -r '.source.namespace // "default"' < $payload)
+release=$(jq -r '.source.release // ""' < $payload)
+chart=$(jq -r '.params.chart // ""' < $payload)
+version=$(jq -r '.params.version // ""' < $payload)
+namespace_overwrite=$(jq -r '.params.namespace // ""' < $payload)
+atomic=$(jq -r '.params.atomic // "false"' < $payload)
+release_overwrite=$(jq -r '.params.release // ""' < $payload)
+values=$(jq -r '.params.values // "" | if type == "array" then .[] else . end' < $payload)
+wait_until_ready=$(jq -r '.params.wait_until_ready // 0' < $payload)
+debug=$(jq -r '.params.debug // "false"' < $payload)
+replace=$(jq -r '.params.replace // "false"' < $payload)
+delete=$(jq -r '.params.delete // "false"' < $payload)
+test=$(jq -r '.params.test // "false"' < $payload)
+purge=$(jq -r '.params.purge // "false"' < $payload)
+devel=$(jq -r '.params.devel // "false"' < $payload)
+recreate_pods=$(jq -r '.params.recreate_pods // "false"' < $payload)
+force=$(jq -r '.params.force // "false"' < $payload)
+show_diff=$(jq -r '.params.show_diff // "false"' < $payload)
+recreate_pods=$(jq -r '.params.recreate_pods // "false"' < $payload)
+exit_after_diff=$(jq -r '.params.exit_after_diff // "false"' < $payload)
+reuse_values=$(jq -r '.params.reuse_values // "false"' < $payload)
+reset_values=$(jq -r '.params.reset_values // "false"' < $payload)
+wait=$(jq -r '.params.wait // 0' < $payload)
+check_is_ready=$(jq -r '.params.check_is_ready // "false"' < $payload)
+
+if [ -z "$chart" ] && [[ "$delete" == "false" ]]; then
+  echo "invalid payload (missing chart)"
+  exit 1
+fi
+
+if [ -f "$source/$namespace_overwrite" ]; then
+  namespace=$(cat $source/$namespace_overwrite)
+elif [ -n "$namespace_overwrite" ]; then
+  namespace=$namespace
+fi
+
+if [ -f "$source/$release_overwrite" ]; then
+  release=$(cat $source/$release_overwrite)
+elif [ -n "$release_overwrite" ]; then
+  release=$release
+fi
+
+if [[ "$chart" == *.tgz ]] || [[ -d "$source/$chart" ]]; then
+  # it's a file/directory
+  chart_full="$source/$chart"
+  version=""
+else
+  if [ -n "$version" ]; then
+    echo "invalid payload (missing version if chart is from repository."
+    exit 1
+  fi
+  # get from a repo
+  chart_full="$chart"
+fi
+
+set_overridden_values() {
+  while read -r -d '' key && read -r -d '' value && read -r -d '' path && read -r -d '' hidden && read -r -d '' type && read -r -d '' verbatim; do
+    if [ -n "$path" ]; then
+      value="$(< "$source/$path")"
+    fi
+
+    if [ "$verbatim" != 'false' ]; then
+      value="${value/\\/\\\\}"
+    fi
+
+    scrubbed_value="$value"
+    if [ "$hidden" != 'false' ]; then
+      scrubbed_value='***HIDDEN***'
+    fi
+
+    helm_set_opt='--set'
+    if [ "$type" == 'string' ]; then
+      helm_set_opt='--set-string'
+    fi
+
+    overridden_args+=("$helm_set_opt" "$key=$value")
+    scrubbed_overridden_args+=("$helm_set_opt" "$key=$scrubbed_value")
+  done < <(jq -j '.params.override_values[]? | if .key and (.value or .path) then (.key, .value // "", .path // "", .hide // false, .type, .verbatim // false) else empty end | tostring + "\u0000"'  < $payload)
+}
+
+current_deployed() {
+  local release="$1"
+  $helm_bin history $tls_flag --tiller-namespace $tiller_namespace --max 20 $release | grep "DEPLOYED"
+}
+
+helm_upgrade() {
+   if [ "$release" == "" ]; then
+    upgrade_args=("install" $chart_full "--namespace=$namespace")
+  else
+    upgrade_args=("upgrade" "--install" "$release" $chart_full "--namespace=$namespace")
+  fi
+
+  if [ "$atomic" == "false" ]; then
+    upgrade_args+("--atomic")
+  fi
+
+  if [ -n "$values" ]; then
+    for value in $values; do
+      upgrade_args+=("-f" "$source/"$value)
+    done
+  fi
+
+  overridden_args=()
+  scrubbed_overridden_args=()
+  set_overridden_values
+
+  if [ -n "$wait_until_ready" ] && [ "$wait_until_ready" -gt "0" ]; then
+    upgrade_args+=("--wait" "--timeout" "$wait_until_ready")
+  fi
+
+  if [ "$check_is_ready" == "true" ] && [ "$wait_until_ready" -lt "1" ]; then
+    upgrade_args+=("--wait")
+  fi
+
+  if [ "$debug" == "true" ]; then
+    upgrade_args+=("--debug")
+    upgrade_args+=("--dry-run")
+  fi
+
+  if [ "$devel" == "true" ]; then
+    non_diff_args+=("--devel")
+  fi
+
+  if [ -n "$version" ]; then
+    if [ -f "$source/$version" ]; then
+      version=$(cat $source/$version)
+    fi
+    upgrade_args+=("--version" "$version")
+  fi
+
+  if [ "$cleanup_on_fail" == "true" ]; then
+    upgrade_args+=("--cleanup-on-fail")
+  fi
+
+  if [ "$force" == "true" ]; then
+    upgrade_args+=("--force")
+  fi
+
+  if [ "$reuse_values" == "true" ]; then
+    upgrade_args+=("--reuse-values")
+  fi
+
+  if [ "$reset_values" == "true" ]; then
+    upgrade_args+=("--reset-values")
+  fi
+
+  logfile="/tmp/log"
+  mkdir -p /tmp
+
+  helm_args=("${upgrade_args[@]}" "${overridden_args[@]}")
+  helm_echo_args=("${upgrade_args[@]}" "${scrubbed_overridden_args[@]}")
+
+  if [[ -d "$chart_full" ]]; then
+    helm_depup_args=("dependency" "update" "$chart_full")
+    helm_depup_echo_args=("dependency" "update" "$chart_full")
+    echo "Running command helm ${helm_depup_echo_args[@]}"
+    $helm_bin "${helm_depup_args[@]}" | tee "$logfile"
+  fi
+
+  if [ "$show_diff" == "true" ] && current_deployed "$release"> /dev/null && [ "$devel" != "true" ] && [ "$debug" != "true" ]; then
+    TMPDIR=$(mktemp -d -p "/tmp/")
+
+    echo "Generating local manifest..."
+    $helm_bin template "$release" "$chart_full" "${helm_args[@]}" > $TMPDIR/manifest.local
+
+    echo "Getting installed manifest"
+    $helm_bin get manifest "$release" -n "$namespace" > $TMPDIR/manifest.installed
+
+    echo "Release diff:"
+    git diff --color $TMPDIR/manifest.installed $TMPDIR/manifest.local | cat
+
+    rm -rf $TMPDIR
+  fi
+
+  if [ "$exit_after_diff" == "true" ]; then
+    echo "Exiting after diff"
+  else
+    echo "Running command helm ${helm_echo_args[@]} | tee $logfile"
+    $helm_bin "${helm_args[@]}" $tls_flag | tee "$logfile"
+  fi
+
+  if [ -n "$wait" ] && [ "$wait" -gt "0" ]; then
+    echo "Waiting for $wait Seconds"
+    sleep $wait
+  fi
+}
+
+helm_delete() {
+  if [ -z "$release" ]; then
+    echo "invalid payload (missing release if delete=true)"
+    exit 1
+  fi
+
+  echo "Deleting the release $release..."
+  delete_args=("delete")
+  if [ "$debug" = true ]; then
+    delete_args+=("--dry-run" "--debug")
+  fi
+
+  if [ "$purge" = true ]; then
+    delete_args+=("--purge")
+  fi
+
+  delete_args+=("$release")
+  logfile="/tmp/log"
+  mkdir -p /tmp
+
+  echo "Running command helm ${delete_args[@]} | tee $logfile"
+  $helm_bin "${delete_args[@]}" $tls_flag | tee $logfile
+}
+
+helm_test() {
+  echo "To be implemented"
+  exit 1
+}
+
+wait_ready_notice() {
+  if [ -n "$wait_until_ready" ] && [ "$wait_until_ready" -gt "0" ]; then
+    echo "Waiting until deployment of $release is ready... (up to $wait_until_ready seconds)"
+  fi
+}
+
+if [ "$delete" = true ]; then
+  helm_delete
+  result="$(jq -n "{version:{release:\"$release\", deleted: \"true\"}, metadata: [{name: \"release\", value: \"$release\"}]}")"
+  echo "$result" | jq -s add  >&3
+elif [ "$test" = true ]; then
+  helm_test
+  result="$(jq -n "{version:{release:\"$release\", tested: \"true\"}, metadata: [{name: \"release\", value: \"$release\"}]}")"
+  echo "$result" | jq -s add  >&3
+else
+  echo "Installing $release"
+  helm_upgrade  
+  deployed=$(current_deployed "$release")
+  revision=$(echo $deployed | awk '{ print $1 }')
+  chart=$(echo $deployed | awk '{ print $8 }')
+  echo "Deployed revision $revision of $release"
+  wait_ready_notice
+  result="$(jq -n "{version:{release:\"$release\", revision:\"$revision\"}, metadata: [{name: \"release\", value: \"$release\"},{name: \"revision\", value: \"$revision\"},{name: \"chart\", value: \"$chart\"}]}")"
+  echo "$result" | jq -s add  >&3
+fi

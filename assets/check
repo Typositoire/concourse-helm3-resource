@@ -1,0 +1,35 @@
+#!/bin/bash
+
+set -e
+set -o pipefail
+
+exec 3>&1 # make stdout available as fd 3 for the result
+exec 1>&2 # redirect all output to stderr for logging
+
+source /opt/resource/common.sh
+
+# Read inputs
+payload=$(mktemp $TMPDIR/helm-resource-request.XXXXXX)
+cat > $payload <&0
+
+# Prepare
+setup_resource $payload
+echo "Resource setup successful."
+
+# Parse parameters
+namespace=$(jq -r '.source.namespace // "default"' < $payload)
+release=$(jq -r '.source.release // ""' < $payload)
+current_rev=$(jq -r '.version.revision // "0"' < $payload || true)
+current_release=$(jq -r '.version.release' < $payload || true)
+
+if [ -z "$release" ]; then
+  release="$current_release"
+fi
+
+if [ $current_rev -eq "0" ]; then
+  last_rev=$($helm_bin history --max 20 $release -o json | jq -r '.[-1].revision')
+  jq -s "map({\"revision\": \"$last_rev\", \"release\": \"$release\"})" >&3
+else
+  rev_list=$($helm_bin history --max 20 $release -o json | jq -r '.[].revision')
+  echo $rev_list | jq -R '.' | jq -s "map({\"revision\": ., \"release\": \"$release\"})" >&3
+fi
