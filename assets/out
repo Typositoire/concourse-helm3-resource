@@ -6,6 +6,8 @@ set -o pipefail
 exec 3>&1 # make stdout available as fd 3 for the result
 exec 1>&2 # redirect all output to stderr for logging
 
+source /opt/resource/common.sh
+
 # Read inputs
 source=$1
 payload=$(mktemp helm-resource-request.XXXXXX)
