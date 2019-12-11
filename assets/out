@@ -6,6 +6,8 @@ set -o pipefail
 exec 3>&1 # make stdout available as fd 3 for the result
 exec 1>&2 # redirect all output to stderr for logging
 
+source /opt/resource/common.sh
+
 # Read inputs
 source=$1
 payload=$(mktemp helm-resource-request.XXXXXX)
@@ -97,7 +99,7 @@ set_overridden_values() {
 
 current_deployed() {
   local release="$1"
-  $helm_bin history $tls_flag --tiller-namespace $tiller_namespace --max 20 $release | grep "DEPLOYED"
+  $helm_bin history --max 20 $release --namespace $namespace | grep -i "DEPLOYED"
 }
 
 helm_upgrade() {
@@ -105,10 +107,6 @@ helm_upgrade() {
     upgrade_args=("install" $chart_full "--namespace=$namespace")
   else
     upgrade_args=("upgrade" "--install" "$release" $chart_full "--namespace=$namespace")
-  fi
-
-  if [ "$atomic" == "false" ]; then
-    upgrade_args+("--atomic")
   fi
 
   if [ -n "$values" ]; then
@@ -174,27 +172,9 @@ helm_upgrade() {
     $helm_bin "${helm_depup_args[@]}" | tee "$logfile"
   fi
 
-  if [ "$show_diff" == "true" ] && current_deployed "$release"> /dev/null && [ "$devel" != "true" ] && [ "$debug" != "true" ]; then
-    TMPDIR=$(mktemp -d -p "/tmp/")
 
-    echo "Generating local manifest..."
-    $helm_bin template "$release" "$chart_full" "${helm_args[@]}" > $TMPDIR/manifest.local
-
-    echo "Getting installed manifest"
-    $helm_bin get manifest "$release" -n "$namespace" > $TMPDIR/manifest.installed
-
-    echo "Release diff:"
-    git diff --color $TMPDIR/manifest.installed $TMPDIR/manifest.local | cat
-
-    rm -rf $TMPDIR
-  fi
-
-  if [ "$exit_after_diff" == "true" ]; then
-    echo "Exiting after diff"
-  else
-    echo "Running command helm ${helm_echo_args[@]} | tee $logfile"
-    $helm_bin "${helm_args[@]}" $tls_flag | tee "$logfile"
-  fi
+  echo "Running command helm ${helm_echo_args[@]} | tee $logfile"
+  $helm_bin "${helm_args[@]}" $tls_flag | tee "$logfile"
 
   if [ -n "$wait" ] && [ "$wait" -gt "0" ]; then
     echo "Waiting for $wait Seconds"
@@ -232,7 +212,7 @@ helm_test() {
 }
 
 wait_ready_notice() {
-  if [ -n "$wait_until_ready" ] && [ "$wait_until_ready" -gt "0" ]; then
+  if [ -n "$wait_until_ready" ] && [ "${wait_until_ready:0:-1}" -gt "0" ]; then
     echo "Waiting until deployment of $release is ready... (up to $wait_until_ready seconds)"
   fi
 }
@@ -247,7 +227,7 @@ elif [ "$test" = true ]; then
   echo "$result" | jq -s add  >&3
 else
   echo "Installing $release"
-  helm_upgrade  
+  helm_upgrade
   deployed=$(current_deployed "$release")
   revision=$(echo $deployed | awk '{ print $1 }')
   chart=$(echo $deployed | awk '{ print $8 }')
