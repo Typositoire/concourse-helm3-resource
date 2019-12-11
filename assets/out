@@ -99,7 +99,7 @@ set_overridden_values() {
 
 current_deployed() {
   local release="$1"
-  $helm_bin history --max 20 $release | grep "DEPLOYED"
+  $helm_bin history --max 20 $release --namespace $namespace | grep -i "DEPLOYED"
 }
 
 helm_upgrade() {
@@ -107,10 +107,6 @@ helm_upgrade() {
     upgrade_args=("install" $chart_full "--namespace=$namespace")
   else
     upgrade_args=("upgrade" "--install" "$release" $chart_full "--namespace=$namespace")
-  fi
-
-  if [ "$atomic" == "false" ]; then
-    upgrade_args+("--atomic")
   fi
 
   if [ -n "$values" ]; then
@@ -216,7 +212,7 @@ helm_test() {
 }
 
 wait_ready_notice() {
-  if [ -n "$wait_until_ready" ] && [ "$wait_until_ready" -gt "0" ]; then
+  if [ -n "$wait_until_ready" ] && [ "${wait_until_ready:0:-1}" -gt "0" ]; then
     echo "Waiting until deployment of $release is ready... (up to $wait_until_ready seconds)"
   fi
 }

@@ -105,15 +105,22 @@ setup_repos() {
   repos=$(jq -c '(try .source.repos[] catch [][])' < $1)
   plugins=$(jq -c '(try .source.plugins[] catch [][])' < $1)
 
+  ls -lhra
+
   local IFS=$'\n'
 
   for pl in $plugins; do
     plurl=$(echo $pl | jq -cr '.url')
     plversion=$(echo $pl | jq -cr '.version // ""')
     if [ -n "$plversion" ]; then
-      plversionflag="--version $plversion"
+      helm plugin install $plurl --version $plversion
+    else
+      if [ -d $2/$plurl ]; then
+        helm plugin install $2/$plurl
+      else
+        helm plugin install $plurl
+      fi
     fi
-    helm plugin install $plurl $plversionflag
   done
 
   for r in $repos; do
@@ -143,5 +150,5 @@ setup_resource() {
   setup_kubernetes $1 $2
   echo "Initializing helm..."
   setup_helm $1 $2
-  setup_repos $1
+  setup_repos $1 $2
 }
