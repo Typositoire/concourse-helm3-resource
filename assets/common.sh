@@ -105,8 +105,6 @@ setup_repos() {
   repos=$(jq -c '(try .source.repos[] catch [][])' < $1)
   plugins=$(jq -c '(try .source.plugins[] catch [][])' < $1)
 
-  ls -lhra
-
   local IFS=$'\n'
 
   for pl in $plugins; do
