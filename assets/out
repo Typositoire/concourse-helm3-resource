@@ -25,7 +25,6 @@ namespace_overwrite=$(jq -r '.params.namespace // ""' < $payload)
 atomic=$(jq -r '.params.atomic // "false"' < $payload)
 release_overwrite=$(jq -r '.params.release // ""' < $payload)
 values=$(jq -r '.params.values // "" | if type == "array" then .[] else . end' < $payload)
-wait_until_ready=$(jq -r '.params.wait_until_ready // 0' < $payload)
 debug=$(jq -r '.params.debug // "false"' < $payload)
 replace=$(jq -r '.params.replace // "false"' < $payload)
 delete=$(jq -r '.params.delete // "false"' < $payload)
@@ -119,11 +118,7 @@ helm_upgrade() {
   scrubbed_overridden_args=()
   set_overridden_values
 
-  if [ -n "$wait_until_ready" ] && [ "$wait_until_ready" -gt "0" ]; then
-    upgrade_args+=("--wait" "--timeout" "$wait_until_ready")
-  fi
-
-  if [ "$check_is_ready" == "true" ] && [ "$wait_until_ready" -lt "1" ]; then
+  if [ "$check_is_ready" == "true" ]; then
     upgrade_args+=("--wait")
   fi
 
@@ -211,12 +206,6 @@ helm_test() {
   exit 1
 }
 
-wait_ready_notice() {
-  if [ -n "$wait_until_ready" ] && [ "${wait_until_ready:0:-1}" -gt "0" ]; then
-    echo "Waiting until deployment of $release is ready... (up to $wait_until_ready seconds)"
-  fi
-}
-
 if [ "$delete" = true ]; then
   helm_delete
   result="$(jq -n "{version:{release:\"$release\", deleted: \"true\"}, metadata: [{name: \"release\", value: \"$release\"}]}")"
@@ -232,7 +221,6 @@ else
   revision=$(echo $deployed | awk '{ print $1 }')
   chart=$(echo $deployed | awk '{ print $8 }')
   echo "Deployed revision $revision of $release"
-  wait_ready_notice
   result="$(jq -n "{version:{release:\"$release\", revision:\"$revision\"}, metadata: [{name: \"release\", value: \"$release\"},{name: \"revision\", value: \"$revision\"},{name: \"chart\", value: \"$chart\"}]}")"
   echo "$result" | jq -s add  >&3
 fi
