@@ -119,11 +119,7 @@ helm_upgrade() {
   scrubbed_overridden_args=()
   set_overridden_values
 
-  if [ -n "$wait_until_ready" ] && [ "$wait_until_ready" -gt "0" ]; then
-    upgrade_args+=("--wait" "--timeout" "$wait_until_ready")
-  fi
-
-  if [ "$check_is_ready" == "true" ] && [ "$wait_until_ready" -lt "1" ]; then
+  if [ "$check_is_ready" == "true" ]; then
     upgrade_args+=("--wait")
   fi
 
