@@ -31,11 +31,7 @@ delete=$(jq -r '.params.delete // "false"' < $payload)
 test=$(jq -r '.params.test // "false"' < $payload)
 purge=$(jq -r '.params.purge // "false"' < $payload)
 devel=$(jq -r '.params.devel // "false"' < $payload)
-recreate_pods=$(jq -r '.params.recreate_pods // "false"' < $payload)
 force=$(jq -r '.params.force // "false"' < $payload)
-show_diff=$(jq -r '.params.show_diff // "false"' < $payload)
-recreate_pods=$(jq -r '.params.recreate_pods // "false"' < $payload)
-exit_after_diff=$(jq -r '.params.exit_after_diff // "false"' < $payload)
 reuse_values=$(jq -r '.params.reuse_values // "false"' < $payload)
 reset_values=$(jq -r '.params.reset_values // "false"' < $payload)
 wait=$(jq -r '.params.wait // 0' < $payload)
@@ -169,7 +165,7 @@ helm_upgrade() {
 
 
   echo "Running command helm ${helm_echo_args[@]} | tee $logfile"
-  $helm_bin "${helm_args[@]}" $tls_flag | tee "$logfile"
+  $helm_bin "${helm_args[@]}" | tee "$logfile"
 
   if [ -n "$wait" ] && [ "$wait" -gt "0" ]; then
     echo "Waiting for $wait Seconds"
@@ -198,7 +194,7 @@ helm_delete() {
   mkdir -p /tmp
 
   echo "Running command helm ${delete_args[@]} | tee $logfile"
-  $helm_bin "${delete_args[@]}" $tls_flag | tee $logfile
+  $helm_bin "${delete_args[@]}" | tee $logfile
 }
 
 helm_test() {
