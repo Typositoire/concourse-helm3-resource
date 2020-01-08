@@ -73,3 +73,46 @@ Deploy an helm chart
 * `reset_values`: *Optional.* When upgrading, reset the values to the ones built into the chart. (Default: false)
 * `wait`: *Optional.* Allows deploy task to sleep for X seconds before continuing to next task. Allows pods to restart and become stable, useful where dependency between pods exists. (Default: 0)
 * `kubeconfig_path`: *Optional.* File containing a kubeconfig. Overrides source configuration for cluster, token, and admin config.
+
+## Example
+
+### Out
+
+Define the resource:
+
+```yaml
+resources:
+- name: myapp-helm
+  type: helm
+  source:
+    cluster_url: https://kube-master.domain.example
+    cluster_ca: _base64 encoded CA pem_
+    admin_key: _base64 encoded key pem_
+    admin_cert: _base64 encoded certificate pem_
+    repos:
+      - name: some_repo
+        url: https://somerepo.github.io/charts
+```
+
+Add to job:
+
+```yaml
+jobs:
+  # ...
+  plan:
+  - put: myapp-helm
+    params:
+      chart: source-repo/chart-0.0.1.tgz
+      values: source-repo/values.yaml
+      override_values:
+      - key: replicas
+        value: 2
+      - key: version
+        path: version/number # Read value from version/number
+      - key: secret
+        value: ((my-top-secret-value)) # Pulled from a credentials backend like Vault
+        hide: true # Hides value in output
+      - key: image.tag
+        path: version/image_tag # Read value from version/number
+        type: string            # Make sure it's interpreted as a string by Helm (not a number)
+```
