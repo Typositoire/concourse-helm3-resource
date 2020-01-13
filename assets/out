@@ -51,7 +51,7 @@ fi
 if [ -f "$source/$release_overwrite" ]; then
   release=$(cat $source/$release_overwrite)
 elif [ -n "$release_overwrite" ]; then
-  release=$release
+  release=$release_overwrite
 fi
 
 if [[ "$chart" == *.tgz ]] || [[ -d "$source/$chart" ]]; then
