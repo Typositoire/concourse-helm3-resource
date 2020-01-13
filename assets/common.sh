@@ -121,21 +121,24 @@ setup_repos() {
     fi
   done
 
-  for r in $repos; do
-    name=$(echo $r | jq -r '.name')
-    url=$(echo $r | jq -r '.url')
-    username=$(echo $r | jq -r '.username // ""')
-    password=$(echo $r | jq -r '.password // ""')
+  if [ $repos ]
+  then
+    for r in $repos; do
+      name=$(echo $r | jq -r '.name')
+      url=$(echo $r | jq -r '.url')
+      username=$(echo $r | jq -r '.username // ""')
+      password=$(echo $r | jq -r '.password // ""')
 
-    echo Installing helm repository $name $url
-    if [[ -n "$username" && -n "$password" ]]; then
-      helm repo add $name $url --username $username --password $password
-    else
-      helm repo add $name $url
-    fi
-  done
+      echo Installing helm repository $name $url
+      if [[ -n "$username" && -n "$password" ]]; then
+        helm repo add $name $url --username $username --password $password
+      else
+        helm repo add $name $url
+      fi
+    done
 
-  helm repo update
+    helm repo update
+  fi
 }
 
 setup_resource() {
