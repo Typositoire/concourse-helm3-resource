@@ -101,36 +101,43 @@ setup_repos() {
 
   local IFS=$'\n'
 
-  for pl in $plugins; do
-    plurl=$(echo $pl | jq -cr '.url')
-    plversion=$(echo $pl | jq -cr '.version // ""')
-    if [ -n "$plversion" ]; then
-      $helm_bin plugin install $plurl --version $plversion
-    else
-      if [ -d $2/$plurl ]; then
-        $helm_bin plugin install $2/$plurl
+  if [ $plugins ]
+  then
+    for pl in $plugins; do
+      plurl=$(echo $pl | jq -cr '.url')
+      plversion=$(echo $pl | jq -cr '.version // ""')
+      if [ -n "$plversion" ]; then
+        $helm_bin plugin install $plurl --version $plversion
       else
-        $helm_bin plugin install $plurl
+        if [ -d $2/$plurl ]; then
+          $helm_bin plugin install $2/$plurl
+        else
+          $helm_bin plugin install $plurl
+        fi
       fi
-    fi
-  done
+    done
+  fi
 
-  for r in $repos; do
-    name=$(echo $r | jq -r '.name')
-    url=$(echo $r | jq -r '.url')
-    username=$(echo $r | jq -r '.username // ""')
-    password=$(echo $r | jq -r '.password // ""')
+  if [ $repos ]
+  then
+    for r in $repos; do
+      name=$(echo $r | jq -r '.name')
+      url=$(echo $r | jq -r '.url')
+      username=$(echo $r | jq -r '.username // ""')
+      password=$(echo $r | jq -r '.password // ""')
 
-    echo Installing helm repository $name $url
-    if [[ -n "$username" && -n "$password" ]]; then
-      $helm_bin repo add $name $url --username $username --password $password
-    else
-      $helm_bin repo add $name $url
-    fi
-  done
+      echo Installing helm repository $name $url
+      if [[ -n "$username" && -n "$password" ]]; then
+        $helm_bin repo add $name $url --username $username --password $password
+      else
+        $helm_bin repo add $name $url
+      fi
+    done
+
+    $helm_bin repo update
+  fi
 
   $helm_bin repo add stable https://kubernetes-charts.storage.googleapis.com
-
   $helm_bin repo update
 }
 
