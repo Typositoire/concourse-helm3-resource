@@ -21,7 +21,8 @@ resource_types:
 ## Source Configuration
 
 * `cluster_url`: *Optional.* URL to Kubernetes Master API service. Do not set when using the `kubeconfig_path` parameter, otherwise required.
-* `cluster_ca`: *Optional.* Base64 encoded PEM. Required if `cluster_url` is https.
+* `cluster_ca`: *Optional.* Base64 encoded PEM. (Required if `insecure_cluster` == false)
+* `insecure_cluster`: *Optional.* Skip TLS verification for cluster API. (Required if `cluster_ca` is nil)
 * `token`: *Optional.* Bearer token for Kubernetes.  This, 'token_path' or `admin_key`/`admin_cert` are required if `cluster_url` is https.
 * `token_path`: *Optional.* Path to file containing the bearer token for Kubernetes.  This, 'token' or `admin_key`/`admin_cert` are required if `cluster_url` is https.
 * `admin_key`: *Optional.* Base64 encoded PEM. Required if `cluster_url` is https and no `token` or 'token_path' is provided.
