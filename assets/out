@@ -51,7 +51,7 @@ fi
 if [ -f "$source/$release_overwrite" ]; then
   release=$(cat $source/$release_overwrite)
 elif [ -n "$release_overwrite" ]; then
-  release=$release
+  release=$release_overwrite
 fi
 
 if [[ "$chart" == *.tgz ]] || [[ -d "$source/$chart" ]]; then
@@ -59,7 +59,7 @@ if [[ "$chart" == *.tgz ]] || [[ -d "$source/$chart" ]]; then
   chart_full="$source/$chart"
   version=""
 else
-  if [ -n "$version" ]; then
+  if [ -z "$version" ]; then
     echo "invalid payload (missing version if chart is from repository."
     exit 1
   fi
