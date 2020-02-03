@@ -70,14 +70,8 @@ setup_helm() {
 
 
   history_max=$(jq -r '.source.helm_history_max // "0"' < $1)
-  stable_repo=$(jq -r '.source.stable_repo // ""' < $payload)
 
   helm_bin="helm"
-
-  if [ -n "$stable_repo" ]; then
-    echo "Stable Repo URL : ${stable_repo}"
-    stable_repo="--stable-repo-url=${stable_repo}"
-  fi
 
   $helm_bin version
 
@@ -111,19 +105,22 @@ setup_repos() {
 
   local IFS=$'\n'
 
-  for pl in $plugins; do
-    plurl=$(echo $pl | jq -cr '.url')
-    plversion=$(echo $pl | jq -cr '.version // ""')
-    if [ -n "$plversion" ]; then
-      helm plugin install $plurl --version $plversion
-    else
-      if [ -d $2/$plurl ]; then
-        helm plugin install $2/$plurl
+  if [ $plugins ]
+  then
+    for pl in $plugins; do
+      plurl=$(echo $pl | jq -cr '.url')
+      plversion=$(echo $pl | jq -cr '.version // ""')
+      if [ -n "$plversion" ]; then
+        $helm_bin plugin install $plurl --version $plversion
       else
-        helm plugin install $plurl
+        if [ -d $2/$plurl ]; then
+          $helm_bin plugin install $2/$plurl
+        else
+          $helm_bin plugin install $plurl
+        fi
       fi
-    fi
-  done
+    done
+  fi
 
   if [ $repos ]
   then
@@ -135,14 +132,17 @@ setup_repos() {
 
       echo Installing helm repository $name $url
       if [[ -n "$username" && -n "$password" ]]; then
-        helm repo add $name $url --username $username --password $password
+        $helm_bin repo add $name $url --username $username --password $password
       else
-        helm repo add $name $url
+        $helm_bin repo add $name $url
       fi
     done
 
-    helm repo update
+    $helm_bin repo update
   fi
+
+  $helm_bin repo add stable https://kubernetes-charts.storage.googleapis.com
+  $helm_bin repo update
 }
 
 setup_resource() {
