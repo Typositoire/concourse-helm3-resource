@@ -105,7 +105,7 @@ setup_repos() {
 
   local IFS=$'\n'
 
-  if [ $plugins ]
+  if [ "$plugins" ]
   then
     for pl in $plugins; do
       plurl=$(echo $pl | jq -cr '.url')
@@ -122,7 +122,7 @@ setup_repos() {
     done
   fi
 
-  if [ $repos ]
+  if [ "$repos" ]
   then
     for r in $repos; do
       name=$(echo $r | jq -r '.name')
