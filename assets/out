@@ -45,7 +45,7 @@ fi
 if [ -f "$source/$namespace_overwrite" ]; then
   namespace=$(cat $source/$namespace_overwrite)
 elif [ -n "$namespace_overwrite" ]; then
-  namespace=$namespace
+  namespace=$namespace_overwrite
 fi
 
 if [ -f "$source/$release_overwrite" ]; then
