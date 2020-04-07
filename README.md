@@ -69,7 +69,7 @@ Deploy an helm chart
 * `devel`: *Optional.* Allow development versions of chart to be installed. This is useful when wanting to install pre-release
   charts (i.e. 1.0.2-rc1) without having to specify a version. (Default: false)
 * `debug`: *Optional.* Dry run the helm install with the debug flag which logs interpolated chart templates. (Default: false)
-* `check_is_ready`: *Optional.* Requires that `wait_until_ready` is set to Default. Applies --wait without timeout. (Default: false)
+* `check_is_ready`: *Optional.* Requires that `wait` is set to Default. Applies --wait without timeout. (Default: false)
 * `reuse_values`: *Optional.* When upgrading, reuse the last release's values. (Default: false)
 * `reset_values`: *Optional.* When upgrading, reset the values to the ones built into the chart. (Default: false)
 * `wait`: *Optional.* Allows deploy task to sleep for X seconds before continuing to next task. Allows pods to restart and become stable, useful where dependency between pods exists. (Default: 0)
