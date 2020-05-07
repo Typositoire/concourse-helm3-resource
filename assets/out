@@ -223,6 +223,6 @@ else
     echo "$result" | jq -s add  >&3
   else
     echo "Debug was set to ${debug}; no release was performed. | tee $logfile"
-    echo '{"version": {"revision": "N/A", "release": "N/A"}}'
+    echo '{"version": {"revision": "N/A", "release": "N/A"}}' >&3
   fi
 fi
