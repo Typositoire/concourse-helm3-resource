@@ -98,7 +98,7 @@ current_deployed() {
 }
 
 helm_upgrade() {
-   if [ "$release" == "" ]; then
+  if [ "$release" == "" ]; then
     upgrade_args=("install" $chart_full "--namespace=$namespace")
   else
     upgrade_args=("upgrade" "--install" "$release" $chart_full "--namespace=$namespace")
@@ -213,10 +213,16 @@ elif [ "$test" = true ]; then
 else
   echo "Installing $release"
   helm_upgrade
-  deployed=$(current_deployed "$release")
-  revision=$(echo $deployed | awk '{ print $1 }')
-  chart=$(echo $deployed | awk '{ print $8 }')
-  echo "Deployed revision $revision of $release"
-  result="$(jq -n "{version:{release:\"$release\", revision:\"$revision\"}, metadata: [{name: \"release\", value: \"$release\"},{name: \"revision\", value: \"$revision\"},{name: \"chart\", value: \"$chart\"}]}")"
-  echo "$result" | jq -s add  >&3
+
+  if [ "$debug" != "true" ]; then
+    deployed=$(current_deployed "$release")
+    revision=$(echo $deployed | awk '{ print $1 }')
+    chart=$(echo $deployed | awk '{ print $8 }')
+    echo "Deployed revision $revision of $release"
+    result="$(jq -n "{version:{release:\"$release\", revision:\"$revision\"}, metadata: [{name: \"release\", value: \"$release\"},{name: \"revision\", value: \"$revision\"},{name: \"chart\", value: \"$chart\"}]}")"
+    echo "$result" | jq -s add  >&3
+  else
+    echo "Debug was set to ${debug}; no release was performed. | tee $logfile"
+    echo '{"version": {"revision": "N/A", "release": "N/A"}}' >&3
+  fi
 fi
