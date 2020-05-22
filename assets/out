@@ -185,7 +185,7 @@ helm_delete() {
     delete_args+=("--dry-run" "--debug")
   fi
 
-  delete_args+=("$release" "--namespace $namespace")
+  delete_args+=("$release" "--namespace=$namespace")
   logfile="/tmp/log"
   mkdir -p /tmp
 
