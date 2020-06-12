@@ -118,6 +118,10 @@ helm_upgrade() {
     upgrade_args+=("--wait")
   fi
 
+  if [ "$atomic" == "true" ]; then
+    upgrade_args+=("--atomic")
+  fi
+
   if [ "$debug" == "true" ]; then
     upgrade_args+=("--debug")
     upgrade_args+=("--dry-run")
