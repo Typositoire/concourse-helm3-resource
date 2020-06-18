@@ -59,10 +59,6 @@ if [[ "$chart" == *.tgz ]] || [[ -d "$source/$chart" ]]; then
   chart_full="$source/$chart"
   version=""
 else
-  if [ -z "$version" ]; then
-    echo "invalid payload (missing version if chart is from repository."
-    exit 1
-  fi
   # get from a repo
   chart_full="$chart"
 fi
@@ -101,7 +97,7 @@ helm_upgrade() {
   if [ "$release" == "" ]; then
     upgrade_args=("install" $chart_full "--namespace=$namespace")
   else
-    upgrade_args=("upgrade" "--install" "$release" $chart_full "--namespace=$namespace")
+    upgrade_args=("upgrade" "$release" $chart_full "--install" "--namespace=$namespace")
   fi
 
   if [ -n "$values" ]; then
@@ -152,6 +148,10 @@ helm_upgrade() {
 
   if [ "$reset_values" == "true" ]; then
     upgrade_args+=("--reset-values")
+  fi
+
+  if [ -n "$history_max" ]; then
+    upgrade_args+=("--history-max=$history_max")
   fi
 
   logfile="/tmp/log"
