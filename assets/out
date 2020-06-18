@@ -59,10 +59,6 @@ if [[ "$chart" == *.tgz ]] || [[ -d "$source/$chart" ]]; then
   chart_full="$source/$chart"
   version=""
 else
-  if [ -z "$version" ]; then
-    echo "invalid payload (missing version if chart is from repository)."
-    exit 1
-  fi
   # get from a repo
   chart_full="$chart"
 fi
