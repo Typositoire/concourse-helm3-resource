@@ -90,8 +90,8 @@ set_overridden_values() {
 
 current_deployed() {
   local release="$1"
-  # Only one result in history because we need to contol only last release
-  $helm_bin history --max 1 $release --namespace $namespace | grep -i "DEPLOYED"
+  # The rest LGTM but we need --max 20 to get the last DEPLOYED release and not end up with a rolled back release being the last one.
+  $helm_bin history --max 20 $release --namespace $namespace | grep -i "DEPLOYED"
 }
 
 helm_upgrade() {
