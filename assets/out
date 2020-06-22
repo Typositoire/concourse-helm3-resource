@@ -90,12 +90,13 @@ set_overridden_values() {
 
 current_deployed() {
   local release="$1"
+  # The rest LGTM but we need --max 20 to get the last DEPLOYED release and not end up with a rolled back release being the last one.
   $helm_bin history --max 20 $release --namespace $namespace | grep -i "DEPLOYED"
 }
 
 helm_upgrade() {
   if [ "$release" == "" ]; then
-    upgrade_args=("install" $chart_full "--namespace=$namespace")
+    upgrade_args=("install" $chart_full "--generate-name" "--namespace=$namespace")
   else
     upgrade_args=("upgrade" "$release" $chart_full "--install" "--namespace=$namespace")
   fi
@@ -150,7 +151,8 @@ helm_upgrade() {
     upgrade_args+=("--reset-values")
   fi
 
-  if [ -n "$history_max" ]; then
+  # Only if upgrade we can use history_max flag
+  if [ -n "$release" ] && [ -n "$history_max" ]; then
     upgrade_args+=("--history-max=$history_max")
   fi
 
@@ -169,7 +171,10 @@ helm_upgrade() {
 
 
   echo "Running command helm ${helm_echo_args[@]} | tee $logfile"
-  $helm_bin "${helm_args[@]}" | tee "$logfile"
+  upgrade_result=$($helm_bin "${helm_args[@]}" | tee "$logfile")
+  echo "$upgrade_result"
+
+  deployed_release=$(echo $upgrade_result | head -n 1 | awk '{ print $2 }')
 
   if [ -n "$wait" ] && [ "$wait" -gt "0" ]; then
     echo "Waiting for $wait Seconds"
@@ -215,6 +220,10 @@ else
   helm_upgrade
 
   if [ "$debug" != "true" ]; then
+    # If release is empty
+    if [ -z "$release" ]; then
+      release=$deployed_release
+    fi
     deployed=$(current_deployed "$release")
     revision=$(echo $deployed | awk '{ print $1 }')
     chart=$(echo $deployed | awk '{ print $8 }')
