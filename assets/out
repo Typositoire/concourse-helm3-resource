@@ -22,6 +22,7 @@ release=$(jq -r '.source.release // ""' < $payload)
 chart=$(jq -r '.params.chart // ""' < $payload)
 version=$(jq -r '.params.version // ""' < $payload)
 namespace_overwrite=$(jq -r '.params.namespace // ""' < $payload)
+create_namespace=$(jq -r '.params.create_namespace // "false"' < $payload)
 atomic=$(jq -r '.params.atomic // "false"' < $payload)
 release_overwrite=$(jq -r '.params.release // ""' < $payload)
 values=$(jq -r '.params.values // "" | if type == "array" then .[] else . end' < $payload)
@@ -110,6 +111,10 @@ helm_upgrade() {
   overridden_args=()
   scrubbed_overridden_args=()
   set_overridden_values
+
+  if [ "$create_namespace" == "true" ]; then
+    upgrade_args+=("--create-namespace")
+  fi
 
   if [ "$check_is_ready" == "true" ]; then
     upgrade_args+=("--wait")
