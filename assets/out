@@ -157,7 +157,7 @@ helm_upgrade() {
     upgrade_args+=("--reset-values")
   fi
 
-  upgrade_args+=("--timeout ${timeout}")
+  upgrade_args+=("--timeout=${timeout}")
 
   # Only if upgrade we can use history_max flag
   if [ -n "$release" ] && [ -n "$history_max" ]; then
