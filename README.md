@@ -73,6 +73,7 @@ Deploy an helm chart
 * `atomic`: *Optional.* This flag will cause failed installs to purge the release, and failed upgrades to rollback to the previous release. (Default: false)
 * `reuse_values`: *Optional.* When upgrading, reuse the last release's values. (Default: false)
 * `reset_values`: *Optional.* When upgrading, reset the values to the ones built into the chart. (Default: false)
+* `timeout`: *Optional.* This flag sets the max time to wait for any individual Kubernetes operation. (Default: 5m0s)
 * `wait`: *Optional.* Allows deploy task to sleep for X seconds before continuing to next task. Allows pods to restart and become stable, useful where dependency between pods exists. (Default: 0)
 * `kubeconfig_path`: *Optional.* File containing a kubeconfig. Overrides source configuration for cluster, token, and admin config.
 
