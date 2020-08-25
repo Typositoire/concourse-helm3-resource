@@ -151,7 +151,7 @@ helm_upgrade() {
   fi
 
   if [ -n "$post_renderer" ]; then
-    upgrade_args+=("--post-renderer" "$post_renderer")
+    upgrade_args+=("--post-renderer" "$chart_full/$post_renderer")
   fi
 
   if [ "$reuse_values" == "true" ]; then
