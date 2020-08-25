@@ -33,6 +33,7 @@ test=$(jq -r '.params.test // "false"' < $payload)
 purge=$(jq -r '.params.purge // "false"' < $payload)
 devel=$(jq -r '.params.devel // "false"' < $payload)
 force=$(jq -r '.params.force // "false"' < $payload)
+post_renderer=$(jq -r '.params.post_renderer // ""' < $payload)
 reuse_values=$(jq -r '.params.reuse_values // "false"' < $payload)
 reset_values=$(jq -r '.params.reset_values // "false"' < $payload)
 wait=$(jq -r '.params.wait // 0' < $payload)
@@ -147,6 +148,10 @@ helm_upgrade() {
 
   if [ "$force" == "true" ]; then
     upgrade_args+=("--force")
+  fi
+
+  if [ -n "$post_renderer" ]; then
+    upgrade_args+=("--post-renderer" "$post_renderer")
   fi
 
   if [ "$reuse_values" == "true" ]; then
