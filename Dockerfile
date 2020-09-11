@@ -10,7 +10,7 @@ RUN curl -sL -o /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes
 ADD assets /opt/resource
 RUN chmod +x /opt/resource/*
 
-ARG HELM_PLUGINS="https://github.com/helm/helm-2to3"
+ARG HELM_PLUGINS="https://github.com/helm/helm-2to3 https://github.com/databus23/helm-diff"
 RUN for i in $(echo $HELM_PLUGINS | xargs -n1); do helm plugin install $i; done
 
 RUN curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"  | bash && \

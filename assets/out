@@ -33,6 +33,7 @@ test=$(jq -r '.params.test // "false"' < $payload)
 purge=$(jq -r '.params.purge // "false"' < $payload)
 devel=$(jq -r '.params.devel // "false"' < $payload)
 force=$(jq -r '.params.force // "false"' < $payload)
+show_diff=$(jq -r '.params.show_diff // "false"' < $payload)
 post_renderer=$(jq -r '.params.post_renderer // ""' < $payload)
 reuse_values=$(jq -r '.params.reuse_values // "false"' < $payload)
 reset_values=$(jq -r '.params.reset_values // "false"' < $payload)
@@ -103,10 +104,12 @@ helm_upgrade() {
   else
     upgrade_args=("upgrade" "$release" $chart_full "--install" "--namespace=$namespace")
   fi
+  upgrade_diff_args=("upgrade" "$release" $chart_full "--install" "--namespace=$namespace")
 
   if [ -n "$values" ]; then
     for value in $values; do
       upgrade_args+=("-f" "$source/"$value)
+      upgrade_diff_args+=("-f" "$source/"$value)
     done
   fi
 
@@ -129,10 +132,7 @@ helm_upgrade() {
   if [ "$debug" == "true" ]; then
     upgrade_args+=("--debug")
     upgrade_args+=("--dry-run")
-  fi
-
-  if [ "$devel" == "true" ]; then
-    non_diff_args+=("--devel")
+    upgrade_diff_args+=("--dry-run")
   fi
 
   if [ -n "$version" ]; then
@@ -140,6 +140,7 @@ helm_upgrade() {
       version=$(cat $source/$version)
     fi
     upgrade_args+=("--version" "$version")
+    upgrade_diff_args+=("--version" "$version")
   fi
 
   if [ "$cleanup_on_fail" == "true" ]; then
@@ -152,14 +153,17 @@ helm_upgrade() {
 
   if [ -n "$post_renderer" ]; then
     upgrade_args+=("--post-renderer" "$chart_full/$post_renderer")
+    upgrade_diff_args+=("--post-renderer" "$chart_full/$post_renderer")
   fi
 
   if [ "$reuse_values" == "true" ]; then
     upgrade_args+=("--reuse-values")
+    upgrade_diff_args+=("--reuse-values")
   fi
 
   if [ "$reset_values" == "true" ]; then
     upgrade_args+=("--reset-values")
+    upgrade_diff_args+=("--reset-values")
   fi
 
   upgrade_args+=("--timeout=${timeout}")
@@ -174,6 +178,7 @@ helm_upgrade() {
 
   helm_args=("${upgrade_args[@]}" "${overridden_args[@]}")
   helm_echo_args=("${upgrade_args[@]}" "${scrubbed_overridden_args[@]}")
+  helm_diff_args=("${upgrade_diff_args[@]}" "${overridden_args[@]}" "--suppress-secrets")
 
   if [[ -d "$chart_full" ]]; then
     helm_depup_args=("dependency" "update" "$chart_full")
@@ -182,6 +187,14 @@ helm_upgrade() {
     $helm_bin "${helm_depup_args[@]}" | tee "$logfile"
   fi
 
+  if [ "$show_diff" = true ] && [ "$devel" != true ]; then
+    if [ "$tls_enabled" = true ]; then
+      echo "TLS not yet supported in Typositoire/concourse-helm3-resource - check back later."
+    else
+      echo "Release diff:"
+      $helm_bin diff "${helm_diff_args[@]}" | tee "$logfile"
+    fi
+  fi
 
   echo "Running command helm ${helm_echo_args[@]} | tee $logfile"
   upgrade_result=$($helm_bin "${helm_args[@]}" | tee "$logfile")
