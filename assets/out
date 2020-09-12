@@ -188,12 +188,8 @@ helm_upgrade() {
   fi
 
   if [ "$show_diff" = true ] && [ "$devel" != true ]; then
-    if [ "$tls_enabled" = true ]; then
-      echo "TLS not yet supported in Typositoire/concourse-helm3-resource - check back later."
-    else
-      echo "Release diff:"
-      $helm_bin diff "${helm_diff_args[@]}" | tee "$logfile"
-    fi
+    echo "Release diff:"
+    $helm_bin diff "${helm_diff_args[@]}" | tee "$logfile"
   fi
 
   echo "Running command helm ${helm_echo_args[@]} | tee $logfile"
