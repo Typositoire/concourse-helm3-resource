@@ -76,6 +76,7 @@ Deploy an helm chart
 * `timeout`: *Optional.* This flag sets the max time to wait for any individual Kubernetes operation. (Default: 5m0s)
 * `wait`: *Optional.* Allows deploy task to sleep for X seconds before continuing to next task. Allows pods to restart and become stable, useful where dependency between pods exists. (Default: 0)
 * `kubeconfig_path`: *Optional.* File containing a kubeconfig. Overrides source configuration for cluster, token, and admin config.
+* `show_diff`: *Optional.* Show the diff that is applied if upgrading an existing successful release. Will not be used when `devel` is set. (Default: false)
 
 ## Example
 
