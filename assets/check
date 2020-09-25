@@ -14,27 +14,42 @@ cat > $payload <&0
 
 # Prepare
 setup_resource $payload
-echo "Resource setup successful."
 
 # Parse parameters
 namespace=$(jq -r '.source.namespace // "default"' < $payload)
 release=$(jq -r '.source.release // ""' < $payload)
-current_rev=$(jq -r '.version.revision // "0"' < $payload || true)
+release_overwrite=$(jq -r '.params.release // ""' < $payload)
 current_release=$(jq -r '.version.release' < $payload || true)
+
+
+echo "$release ----- $release_overwrite ------ $current_release" 
+
+if [ -f "$source/$release_overwrite" ]; then
+  release=$(cat $source/$release_overwrite)
+elif [ -n "$release_overwrite" ]; then
+  release=$release_overwrite
+fi
+
+echo "after first if: $release "
 
 if [ -z "$release" ]; then
   release="$current_release"
 fi
 
-if [ "$release"]
-  then
-  if [ $current_rev -eq "0" ]; then
-    last_rev=$($helm_bin history --max 20 $release --namespace $namespace -o json | jq -r '.[-1].revision')
-    jq -s "map({\"revision\": \"$last_rev\", \"release\": \"$release\"})" >&3
-  else
-    rev_list=$($helm_bin history --max 20 $release --namespace $namespace -o json | jq -r '.[].revision')
-    echo $rev_list | jq -R '.' | jq -s "map({\"revision\": ., \"release\": \"$release\"})" >&3
+echo "after second if: $release "
+
+if [ "$release"] ; then
+  echo "$release was true"
+  revision=$($helm_bin status --namespace $namespace $release -o json 2>/dev/null | jq '.version')
+  echo "revision: $revision"
+  if [ $? -ne 0 ] ; then
+    echo "helm status failed"
+    revision=0
   fi
-else
-  echo '[]' | jq . >&3
+  echo $revision | jq -R '.' | jq -s "map({\"revision\": ., \"release\": \"$release\"})" >&3
+  exit 0
 fi
+
+echo "everything else failed"
+# we only get here if everything else fails.
+echo "ReleaseNotFound" | jq -R '.' | jq -s "map({\"revision\": ., \"release\": \"$release\"})" >&3
