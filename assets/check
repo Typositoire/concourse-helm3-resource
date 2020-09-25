@@ -21,8 +21,10 @@ release=$(jq -r '.source.release // ""' < $payload)
 release_overwrite=$(jq -r '.params.release // ""' < $payload)
 current_release=$(jq -r '.version.release' < $payload || true)
 
+logfile="/tmp/log"
+mkdir -p /tmp
 
-echo "$release ----- $release_overwrite ------ $current_release" 
+echo "$release ----- $release_overwrite ------ $current_release" | tee "$logfile" 
 
 if [ -f "$source/$release_overwrite" ]; then
   release=$(cat $source/$release_overwrite)
@@ -30,26 +32,25 @@ elif [ -n "$release_overwrite" ]; then
   release=$release_overwrite
 fi
 
-echo "after first if: $release "
+echo "after first if: $release " | tee -a "$logfile"
 
 if [ -z "$release" ]; then
   release="$current_release"
 fi
 
-echo "after second if: $release "
+echo "after second if: $release " | tee -a "$logfile"
 
-if [ "$release"] ; then
-  echo "$release was true"
+if [ "$release" ] ; then
+  echo "$release was true" | tee "$logfile"
   revision=$($helm_bin status --namespace $namespace $release -o json 2>/dev/null | jq '.version')
-  echo "revision: $revision"
+  echo "revision: $revision" | tee -a "$logfile"
   if [ $? -ne 0 ] ; then
-    echo "helm status failed"
+    echo "helm status failed" | tee -a "$logfile"
     revision=0
   fi
   echo $revision | jq -R '.' | jq -s "map({\"revision\": ., \"release\": \"$release\"})" >&3
   exit 0
 fi
 
-echo "everything else failed"
-# we only get here if everything else fails.
-echo "ReleaseNotFound" | jq -R '.' | jq -s "map({\"revision\": ., \"release\": \"$release\"})" >&3
+echo "everything else failed" | tee -a "$logfile"
+exit 1
