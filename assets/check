@@ -1,7 +1,6 @@
 #!/bin/bash
 
 set -e
-set -o pipefail
 
 exec 3>&1 # make stdout available as fd 3 for the result
 exec 1>&2 # redirect all output to stderr for logging
@@ -14,7 +13,8 @@ cat > $payload <&0
 
 # Prepare
 setup_resource $payload
-echo "Resource setup successful."
+echo "Resource setup successful." 
+
 
 # Parse parameters
 namespace=$(jq -r '.source.namespace // "default"' < $payload)
@@ -54,4 +54,5 @@ fi
 
 # if we get here we couldnt find a revision to return so we bail - this is a good thing
 # since check should fail if its configuration cant point to a verifiable state.
+echo "Unable to confirm any revision for namspace: $namespace & release: $release" 
 exit 1
