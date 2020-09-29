@@ -43,7 +43,6 @@ if [ -z "$release" ]; then
   release="$current_release"
 fi
 
-
 if [ "$release" ] ; then
   revision=$($helm_bin history --max 20 --namespace $namespace $release 2>/dev/null | grep -i 'deployed' | awk '{print $1}' )
   if [ "$revision" ] ; then
