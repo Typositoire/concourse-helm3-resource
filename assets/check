@@ -26,7 +26,7 @@ if [ -z "$release" ]; then
   release="$current_release"
 fi
 
-if [ "$release"]
+if [ "$release" ]
   then
   if [ $current_rev -eq "0" ]; then
     last_rev=$($helm_bin history --max 20 $release --namespace $namespace -o json | jq -r '.[-1].revision')
