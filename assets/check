@@ -45,7 +45,7 @@ fi
 
 
 if [ "$release" ] ; then
-  revision=$($helm_bin status --namespace $namespace $release -o json 2>/dev/null | jq '.version' )
+  revision=$($helm_bin history --max 20 --namespace $namespace $release 2>/dev/null | grep -i 'deployed' | awk '{print $1}' )
   if [ "$revision" ] ; then
     echo $revision | jq -R '.' | jq -s "map({\"revision\": ., \"release\": \"$release\"})" >&3
     exit 0
