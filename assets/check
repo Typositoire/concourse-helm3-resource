@@ -17,14 +17,21 @@ setup_resource $payload
 
 # Parse parameters
 namespace=$(jq -r '.source.namespace // "default"' < $payload)
+namespace_overwrite=$(jq -r '.params.namespace // ""' < $payload)
+current_namespace=$(jq -r '.version.namespace' < $payload || true)
 release=$(jq -r '.source.release // ""' < $payload)
 release_overwrite=$(jq -r '.params.release // ""' < $payload)
 current_release=$(jq -r '.version.release' < $payload || true)
 
-logfile="/tmp/log"
-mkdir -p /tmp
+if [ -f "$source/$namespace_overwrite" ]; then
+  namespace=$(cat $source/$namespace_overwrite)
+elif [ -n "$namespace_overwrite" ]; then
+  namespace=$namespace_overwrite
+fi
 
-echo "$release ----- $release_overwrite ------ $current_release" | tee "$logfile" 
+if [ -z "$namespace" ]; then
+  release="$current_namespace"
+fi
 
 if [ -f "$source/$release_overwrite" ]; then
   release=$(cat $source/$release_overwrite)
@@ -32,25 +39,19 @@ elif [ -n "$release_overwrite" ]; then
   release=$release_overwrite
 fi
 
-echo "after first if: $release " | tee -a "$logfile"
-
 if [ -z "$release" ]; then
   release="$current_release"
 fi
 
-echo "after second if: $release " | tee -a "$logfile"
 
 if [ "$release" ] ; then
-  echo "$release was true" | tee "$logfile"
-  revision=$($helm_bin status --namespace $namespace $release -o json 2>/dev/null | jq '.version')
-  echo "revision: $revision" | tee -a "$logfile"
-  if [ $? -ne 0 ] ; then
-    echo "helm status failed" | tee -a "$logfile"
-    revision=0
+  revision=$($helm_bin status --namespace $namespace $release -o json 2>/dev/null | jq '.version' )
+  if [ "$revision" ] ; then
+    echo $revision | jq -R '.' | jq -s "map({\"revision\": ., \"release\": \"$release\"})" >&3
+    exit 0
   fi
-  echo $revision | jq -R '.' | jq -s "map({\"revision\": ., \"release\": \"$release\"})" >&3
-  exit 0
 fi
 
-echo "everything else failed" | tee -a "$logfile"
+# if we get here we couldnt find a revision to return so we bail - this is a good thing
+# since check should fail if its configuration cant point to a verifiable state.
 exit 1
