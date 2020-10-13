@@ -2,11 +2,16 @@
 
 Deploy [Helm Charts](https://github.com/helm/helm) from [Concourse](https://concourse-ci.org/).
 
-Heavily based on the work of https://github.com/linkyard/concourse-helm-resource
+Heavily based on the work of [`linkyard/concourse-helm-resource`][linkyard].
+
+[linkyard]: https://github.com/linkyard/concourse-helm-resource
 
 ## Docker Image
 
-https://hub.docker.com/repository/docker/typositoire/concourse-helm3-resource
+You can pull the resource image from [`typositoire/concourse-helm3-resource`][dockerhub]. !["Dockerhub Pull Badge"](https://img.shields.io/docker/pulls/typositoire/concourse-helm3-resource.svg "Dockerhub Pull Badge")
+
+
+[dockerhub]: https://hub.docker.com/repository/docker/typositoire/concourse-helm3-resource
 
 ## Usage
 
