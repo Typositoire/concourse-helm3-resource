@@ -1,7 +1,6 @@
 #!/bin/bash
 
 set -e
-set -o pipefail
 
 exec 3>&1 # make stdout available as fd 3 for the result
 exec 1>&2 # redirect all output to stderr for logging
@@ -14,27 +13,46 @@ cat > $payload <&0
 
 # Prepare
 setup_resource $payload
-echo "Resource setup successful."
+echo "Resource setup successful." 
+
 
 # Parse parameters
 namespace=$(jq -r '.source.namespace // "default"' < $payload)
+namespace_overwrite=$(jq -r '.params.namespace // ""' < $payload)
+current_namespace=$(jq -r '.version.namespace' < $payload || true)
 release=$(jq -r '.source.release // ""' < $payload)
-current_rev=$(jq -r '.version.revision // "0"' < $payload || true)
+release_overwrite=$(jq -r '.params.release // ""' < $payload)
 current_release=$(jq -r '.version.release' < $payload || true)
+
+if [ -f "$source/$namespace_overwrite" ]; then
+  namespace=$(cat $source/$namespace_overwrite)
+elif [ -n "$namespace_overwrite" ]; then
+  namespace=$namespace_overwrite
+fi
+
+if [ -z "$namespace" ]; then
+  release="$current_namespace"
+fi
+
+if [ -f "$source/$release_overwrite" ]; then
+  release=$(cat $source/$release_overwrite)
+elif [ -n "$release_overwrite" ]; then
+  release=$release_overwrite
+fi
 
 if [ -z "$release" ]; then
   release="$current_release"
 fi
 
-if [ "$release"]
-  then
-  if [ $current_rev -eq "0" ]; then
-    last_rev=$($helm_bin history --max 20 $release --namespace $namespace -o json | jq -r '.[-1].revision')
-    jq -s "map({\"revision\": \"$last_rev\", \"release\": \"$release\"})" >&3
-  else
-    rev_list=$($helm_bin history --max 20 $release --namespace $namespace -o json | jq -r '.[].revision')
-    echo $rev_list | jq -R '.' | jq -s "map({\"revision\": ., \"release\": \"$release\"})" >&3
+if [ "$release" ] ; then
+  revision=$($helm_bin history --max 20 --namespace $namespace $release 2>/dev/null | grep -i 'deployed' | awk '{print $1}' )
+  if [ "$revision" ] ; then
+    echo $revision | jq -R '.' | jq -s "map({\"revision\": ., \"release\": \"$release\"})" >&3
+    exit 0
   fi
-else
-  echo '[]' | jq . >&3
 fi
+
+# if we get here we couldnt find a revision to return so we bail - this is a good thing
+# since check should fail if its configuration cant point to a verifiable state.
+echo "Unable to confirm any revision for namspace: $namespace & release: $release" 
+exit 1

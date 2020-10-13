@@ -67,8 +67,9 @@ Deploy an helm chart
   The default behaviour of backslashes in `--set` is to quote the next character so `val\ue` is treated as `value` by Helm.
 * `token_path`: *Optional.* Path to file containing the bearer token for Kubernetes.  This, 'token' or `admin_key`/`admin_cert` are required if `cluster_url` is https.
 * `version`: *Optional* Chart version to deploy, can be a file or a value. Only applies if `chart` is not a file.
-* `delete`: *Optional.* Deletes the release instead of installing it. Requires the `name`. (Default: false)
- ## TODO * `test`: *Optional.* Test the release instead of installing it. Requires the `release`. (Default: false)
+* `test`: *Optional.* Test the release instead of installing it. Requires the `release`. (Default: false)
+* `test_logs`: *Optional.* Display pod logs when running `test`. (Default: false)
+* `delete`: *Optional.* Deletes the release instead of installing it. Requires the `release`. (Default: false)
 * `replace`: *Optional.* Replace deleted release with same name. (Default: false)
 * `force`: *Optional.* Force resource update through delete/recreate if needed. (Default: false)
 * `devel`: *Optional.* Allow development versions of chart to be installed. This is useful when wanting to install pre-release

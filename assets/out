@@ -30,6 +30,7 @@ debug=$(jq -r '.params.debug // "false"' < $payload)
 replace=$(jq -r '.params.replace // "false"' < $payload)
 delete=$(jq -r '.params.delete // "false"' < $payload)
 test=$(jq -r '.params.test // "false"' < $payload)
+test_logs=$(jq -r '.params.test_logs // "false"' < $payload)
 purge=$(jq -r '.params.purge // "false"' < $payload)
 devel=$(jq -r '.params.devel // "false"' < $payload)
 force=$(jq -r '.params.force // "false"' < $payload)
@@ -41,8 +42,13 @@ wait=$(jq -r '.params.wait // 0' < $payload)
 check_is_ready=$(jq -r '.params.check_is_ready // "false"' < $payload)
 timeout=$(jq -r '.params.timeout // "5m0s"' < $payload)
 
-if [ -z "$chart" ] && [[ "$delete" == "false" ]]; then
+if [[ "$test" == "false" ]] && [[ "$delete" == "false" ]] && [ -z "$chart" ] ; then
   echo "invalid payload (missing chart)"
+  exit 1
+fi
+
+if [[ "$test" == "true" ]] && [[ "$delete" == "true" ]] ; then
+  echo "invalid payload ( test and delete cannot both be true )"
   exit 1
 fi
 
@@ -178,7 +184,7 @@ helm_upgrade() {
 
   helm_args=("${upgrade_args[@]}" "${overridden_args[@]}")
   helm_echo_args=("${upgrade_args[@]}" "${scrubbed_overridden_args[@]}")
-  helm_diff_args=("${upgrade_diff_args[@]}" "${overridden_args[@]}" "--suppress-secrets")
+  helm_diff_args=("${upgrade_diff_args[@]}" "${overridden_args[@]}" "--suppress-secrets" "--include-tests" )
 
   if [[ -d "$chart_full" ]]; then
     helm_depup_args=("dependency" "update" "$chart_full")
@@ -225,8 +231,26 @@ helm_delete() {
 }
 
 helm_test() {
-  echo "To be implemented"
-  exit 1
+  if [ -z "$release" ]; then
+    echo "invalid payload (missing release if test=true)"
+    exit 1
+  fi
+  
+  if [ "$debug" = true ]; then
+    test_args+=("--debug")
+  fi
+  
+  test_args+=("--namespace=$namespace" "test" "$release" "--timeout=$timeout")
+ 
+  if [ "$test_logs" = true ] ; then
+    test_args+=("--logs")
+  fi
+
+  logfile="/tmp/log"
+  mkdir -p /tmp
+
+  echo "Running command helm ${test_args[@]} | tee $logfile"
+  $helm_bin ${test_args[@]} | tee $logfile
 }
 
 if [ "$delete" = true ]; then
