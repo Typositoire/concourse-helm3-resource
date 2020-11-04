@@ -35,7 +35,7 @@ setup_kubernetes() {
         kubectl config set-cluster default --server=$cluster_url --insecure-skip-tls-verify=true
       else
         ca_path="/root/.kube/ca.pem"
-        echo "$cluster_ca" | base64 -d > $ca_path
+        (echo "$cluster_ca" | base64 -d || echo "$cluster_ca") > $ca_path
         kubectl config set-cluster default --server=$cluster_url --certificate-authority=$ca_path
       fi
 
