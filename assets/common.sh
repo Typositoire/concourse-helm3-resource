@@ -35,7 +35,10 @@ setup_kubernetes() {
         kubectl config set-cluster default --server=$cluster_url --insecure-skip-tls-verify=true
       else
         ca_path="/root/.kube/ca.pem"
-        (echo "$cluster_ca" | base64 -d || echo "$cluster_ca") > $ca_path
+        if ! echo "$cluster_ca" | base64 -d > $ca_path; then
+          echo "info: assuming unencoded cluster CA cert" >/dev/stderr
+          echo "$cluster_ca" > $ca_path
+        fi
         kubectl config set-cluster default --server=$cluster_url --certificate-authority=$ca_path
       fi
 
