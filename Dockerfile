@@ -13,7 +13,8 @@ RUN chmod +x /opt/resource/*
 ARG HELM_PLUGINS="https://github.com/helm/helm-2to3"
 RUN for i in $(echo $HELM_PLUGINS | xargs -n1); do helm plugin install $i; done
 
-RUN curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"  | bash && \
+RUN wget "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh" && \
+  bash install_kustomize.sh 3.8.1 && \
   install kustomize /usr/local/bin/kustomize
 
 COPY entrypoint.sh /entrypoint.sh
