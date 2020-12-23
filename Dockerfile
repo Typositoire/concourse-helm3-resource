@@ -1,4 +1,4 @@
-FROM alpine/helm:3.2.0
+FROM alpine/helm:3.4.2
 LABEL maintainer "Yann David (@Typositoire) <davidyann88@gmail>"
 
 RUN apk add --update --upgrade --no-cache jq bash curl git
