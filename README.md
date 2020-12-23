@@ -37,7 +37,7 @@ resource_types:
 * `helm_history_max`: *Optional.* Limits the maximum number of revisions. (Default: 0 = no limit)
 * `repos`: *Optional.* Array of Helm repositories to initialize, each repository is defined as an object with properties `name`, `url` (required) username and password (optional).
 * `plugins`: *Optional.* Array of Helm plugins to install, each defined as an object with properties `url` (required), `version` (optional).
-* `stable_repo`: *Optional* Override default Helm stable repo <https://kubernetes-charts.storage.googleapis.com>. Useful if running helm deploys without internet access.
+* `stable_repo`: *Optional* A `false` value will disable using a default Helm stable repo. Any other value will be used to Override default Helm stable repo URL <https://charts.helm.sh/stable>. Useful if running helm deploys without internet access.
 * `tracing_enabled`: *Optional.* Enable extremely verbose tracing for this resource. Useful when developing the resource itself. May allow secrets to be displayed. (Default: false)
 * `helm_setup_purge_all`: *Optional.* Delete and purge every helm release. Use with extreme caution. (Default: false)
 
