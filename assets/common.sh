@@ -145,10 +145,8 @@ setup_repos() {
     $helm_bin repo update
   fi
 
-  if [ ! "$stable_repo" == "false" ]; then
-    $helm_bin repo add stable $stable_repo
-    $helm_bin repo update
-  fi
+  $helm_bin repo add stable $stable_repo
+  $helm_bin repo update
 }
 
 setup_resource() {
