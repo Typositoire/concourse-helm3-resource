@@ -1,3 +1,7 @@
+!["Docker Cloud Automated build"](https://img.shields.io/docker/cloud/automated/typositoire/concourse-helm3-resource)
+!["Docker Cloud Build Status"](https://img.shields.io/docker/cloud/build/typositoire/concourse-helm3-resource)
+!["Dockerhub Pull Badge"](https://img.shields.io/docker/pulls/typositoire/concourse-helm3-resource.svg "Dockerhub Pull Badge")
+
 # Helm Resource for Concourse
 
 Deploy [Helm Charts](https://github.com/helm/helm) from [Concourse](https://concourse-ci.org/).
@@ -8,8 +12,7 @@ Heavily based on the work of [`linkyard/concourse-helm-resource`][linkyard].
 
 ## Docker Image
 
-You can pull the resource image from [`typositoire/concourse-helm3-resource`][dockerhub]. !["Dockerhub Pull Badge"](https://img.shields.io/docker/pulls/typositoire/concourse-helm3-resource.svg "Dockerhub Pull Badge")
-
+You can pull the resource image from [`typositoire/concourse-helm3-resource`][dockerhub].
 
 [dockerhub]: https://hub.docker.com/repository/docker/typositoire/concourse-helm3-resource
 
