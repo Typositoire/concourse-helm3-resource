@@ -161,5 +161,4 @@ setup_resource() {
   setup_kubernetes $1 $2
   echo "Initializing helm..."
   setup_helm $1 $2
-  setup_repos $1 $2
 }
