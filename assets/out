@@ -42,6 +42,7 @@ reset_values=$(jq -r '.params.reset_values // "false"' < $payload)
 wait=$(jq -r '.params.wait // 0' < $payload)
 check_is_ready=$(jq -r '.params.check_is_ready // "false"' < $payload)
 timeout=$(jq -r '.params.timeout // "5m0s"' < $payload)
+skip_missing_values=$(jq -r '.params.skip_missing_values // "false"')
 
 if [[ "$test" == "false" ]] && [[ "$delete" == "false" ]] && [ -z "$chart" ] ; then
   echo "invalid payload (missing chart)"
@@ -115,8 +116,17 @@ helm_upgrade() {
 
   if [ -n "$values" ]; then
     for value in $values; do
-      upgrade_args+=("-f" "$source/"$value)
-      upgrade_diff_args+=("-f" "$source/"$value)
+      if [ "$skip_missing_values" == "true" ]; then
+        if [ -f "$source/$value" ]; then
+          upgrade_args+=("-f" "$source/"$value)
+          upgrade_diff_args+=("-f" "$source/"$value)
+        else
+          echo "skipping missing values file $source/$value"
+        fi
+      else
+        upgrade_args+=("-f" "$source/"$value)
+        upgrade_diff_args+=("-f" "$source/"$value)
+      fi
     done
   fi
 
