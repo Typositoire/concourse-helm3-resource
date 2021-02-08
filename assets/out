@@ -120,6 +120,8 @@ helm_upgrade() {
         if [ -f "$source/$value" ]; then
           upgrade_args+=("-f" "$source/"$value)
           upgrade_diff_args+=("-f" "$source/"$value)
+        else
+          echo "skipping missing values file $source/$value"
         fi
       else
         upgrade_args+=("-f" "$source/"$value)
