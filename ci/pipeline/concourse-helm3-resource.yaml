@@ -1,0 +1,125 @@
+# pipeline_name:  concourse-helm3-resource
+# team:           main
+
+---
+resource_types:
+- name: pull-request
+  type: docker-image
+  source:
+    repository: teliaoss/github-pr-resource
+
+resources:
+# - name: master
+#   type: git
+#   source:
+#     uri: git@github.com:typositoire/concourse-helm3-resource.git
+#     branch: master
+#     private_key: ((api.deploy_key))
+
+- name: pull-request
+  type: pull-request
+  check_every: 24h
+  webhook_token: ((github.webhook_token))
+  source:
+    repository: typositoire/concourse-helm3-resource
+    access_token: ((github.access_token))
+
+- name: master-tag
+  type: git
+  source:
+    paths:
+      - VERSION
+    uri: git@github.com:typositoire/concourse-helm3-resource.git
+    branch: master
+    private_key: ((github.deploy_key))
+
+jobs:
+# - name: build-master
+#   plan:
+#     - get: master
+#       trigger: true
+#       passed: [test-master]
+#     - task: build-task-image
+#       privileged: true
+#       config:
+#         platform: linux
+#         image_resource:
+#           type: registry-image
+#           source:
+#             repository: vito/oci-build-task
+#         inputs:
+#         - name: master
+#         outputs:
+#         - name: image
+#         run:
+#           path: build
+#         params:
+#           CONTEXT: master/
+
+- name: tag-master
+  plan:
+    - get: master-tag
+      trigger: true
+    - task: compute-info
+      config:
+        platform: linux
+        image_resource:
+          type: registry-image
+          source:
+            repository: alpine/git
+        inputs:
+        - name: master-tag
+        outputs:
+        - name: info
+        run:
+          path: sh
+          args:
+            - -c
+            - |
+              #!/bin/sh
+
+              cd master-tag
+              git log $(git describe --tags --abbrev=0)..HEAD --oneline > ../info/notes
+
+              echo v$(cat VERSION) > ../info/tag
+    - put: master-tag
+      params:
+        repository: master-tag
+        tag: info/tag
+        only_tag: true
+        annotate: info/notes
+
+- name: validate-prs
+  plan:
+    - get: pull-request
+      trigger: true
+      version: every
+    - put: pull-request
+      params:
+        path: pull-request
+        status: pending
+    - task: check-for-version-bump
+      config:
+        platform: linux
+        image_resource:
+          type: registry-image
+          source:
+            repository: alpine/git
+        inputs:
+        - name: pull-request
+        outputs:
+        - name: pr-notes
+        run:
+          path: sh
+          args:
+            - -c
+            - |
+              #!/bin/sh
+              
+              LAST_TAG=git describe --tags --abbrev=0
+              NEW_TAG="v$(cat pull-request/VERSION)"
+
+              if [ "${LAST_TAG}" == "${NEW_TAG}"]; then
+                echo "Version bump did not happen. ${LAST_TAG} is the same as ${NEW_TAG}"
+                exit 1
+              fi
