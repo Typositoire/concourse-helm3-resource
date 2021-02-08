@@ -91,9 +91,12 @@ jobs:
 
 - name: validate-prs
   plan:
-    - get: pull-request
-      trigger: true
-      version: every
+    - in_parallel:
+        steps:
+        - get: pull-request
+          trigger: true
+          version: every
+        - get: master-tag
     - put: pull-request
       params:
         path: pull-request
@@ -107,6 +110,7 @@ jobs:
             repository: alpine/git
         inputs:
         - name: pull-request
+        - name: master-tag
         outputs:
         - name: pr-notes
         run:
@@ -115,11 +119,19 @@ jobs:
             - -c
             - |
               #!/bin/sh
-              
-              LAST_TAG=git describe --tags --abbrev=0
-              NEW_TAG="v$(cat pull-request/VERSION)"
 
-              if [ "${LAST_TAG}" == "${NEW_TAG}"]; then
+              set -ex
+
+              cd master-tag
+              LAST_TAG="$(git describe --tags --abbrev=0)"
+              cd ..
+
+              cd pull-request/
+              NEW_TAG="v$(cat VERSION)"
+
+              RESULT=$(pull-request/assets/checksemver.sh ${NEW_TAG} ${LAST_TAG})
+
+              if [ "${RESULT}" != "1" ]; then
                 echo "Version bump did not happen. ${LAST_TAG} is the same as ${NEW_TAG}"
                 exit 1
               fi
