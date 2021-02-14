@@ -24,7 +24,7 @@ resources:
     repository: typositoire/concourse-helm3-resource
     access_token: ((github.access_token))
 
-- name: master-tag
+- name: master-version
   type: git
   source:
     paths:
@@ -32,6 +32,14 @@ resources:
     uri: git@github.com:typositoire/concourse-helm3-resource.git
     branch: master
     private_key: ((github.deploy_key))
+
+- name: master-tags
+  type: git
+  source:
+    uri: git@github.com:typositoire/concourse-helm3-resource.git
+    branch: master
+    private_key: ((github.deploy_key))
+    tag_filter: "v*.*.*"
 
 jobs:
 # - name: build-master
@@ -58,7 +66,7 @@ jobs:
 
 - name: tag-master
   plan:
-    - get: master-tag
+    - get:  master-version
       trigger: true
     - task: compute-info
       config:
@@ -68,7 +76,7 @@ jobs:
           source:
             repository: alpine/git
         inputs:
-        - name: master-tag
+        - name:  master-version
         outputs:
         - name: info
         run:
@@ -78,15 +86,16 @@ jobs:
             - |
               #!/bin/sh
 
-              cd master-tag
+              cd master-version
               git log $(git describe --tags --abbrev=0)..HEAD --oneline > ../info/notes
 
               echo v$(cat VERSION) > ../info/tag
-    - put: master-tag
+    - put: master-version
       params:
-        repository: master-tag
+        repository:  master-version
         tag: info/tag
         only_tag: true
+        branch: master
         annotate: info/notes
 
 - name: validate-prs
@@ -96,7 +105,9 @@ jobs:
         - get: pull-request
           trigger: true
           version: every
-        - get: master-tag
+        - get: master-tags
+          params:
+            fetch_tags: true
     - put: pull-request
       params:
         path: pull-request
@@ -110,7 +121,7 @@ jobs:
             repository: alpine/git
         inputs:
         - name: pull-request
-        - name: master-tag
+        - name: master-tags
         outputs:
         - name: pr-notes
         run:
@@ -122,16 +133,19 @@ jobs:
 
               set -ex
 
-              cd master-tag
-              LAST_TAG="$(git describe --tags --abbrev=0)"
-              cd ..
+              LAST_TAG="$(cat master-tags/.git/ref)"
 
-              cd pull-request/
-              NEW_TAG="v$(cat VERSION)"
+              NEW_TAG="v$(cat pull-request/VERSION)"
 
-              RESULT=$(pull-request/assets/checksemver.sh ${NEW_TAG} ${LAST_TAG})
+              RESULT=$(pull-request/ci/assets/checksemver.sh ${NEW_TAG} ${LAST_TAG})
 
-              if [ "${RESULT}" != "1" ]; then
+              if [ "${RESULT}" == "1" ]; then
+                echo "Coolio"
+                exit 0
+              elif [ "${RESULT}" == "0" ]; then
                 echo "Version bump did not happen. ${LAST_TAG} is the same as ${NEW_TAG}"
+                exit 1
+              else
+                echo "Version bump did not happen. ${LAST_TAG} is higher than ${NEW_TAG}"
                 exit 1
               fi
