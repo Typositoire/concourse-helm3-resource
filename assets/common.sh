@@ -157,8 +157,26 @@ setup_resource() {
     set -x
   fi
 
+  digitalocean=$(jq -r '.source.digitalocean // "false"' < $1)
+  do_cluster_id=$(jq -r '.source.digitalocean.cluster_id // "false"' < $1)
+  do_access_token=$(jq -r '.source.digitalocean.access_token // "false"' < $1)
+
   echo "Initializing kubectl..."
-  setup_kubernetes $1 $2
+  if [ "$digitalocean" == "false" ]; then
+    setup_kubernetes $1 $2
+  elif [ "$do_cluster_id" != "false" ] && [ "$do_access_token" != "false" ]; then
+    echo "Initializing digitalocean..."
+    setup_doctl $1 $2
+  fi
+
   echo "Initializing helm..."
   setup_helm $1 $2
+}
+
+setup_doctl() {
+  doctl_token=$(jq -r '.source.digitalocean.access_token // ""' < $payload)
+  doctl_cluster_id=$(jq -r '.source.digitalocean.cluster_id // ""' < $payload)
+  doctl auth init -t $doctl_token
+
+  doctl kubernetes cluster kubeconfig save $doctl_cluster_id
 }

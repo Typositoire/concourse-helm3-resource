@@ -28,7 +28,7 @@ resource_types:
 * `cluster_url`: *Optional.* URL to Kubernetes Master API service. Do not set when using the `kubeconfig_path` parameter, otherwise required.
 * `cluster_ca`: *Optional.* Cluster CA certificate PEM, optionally Base64 encoded. (Required if `insecure_cluster` == false)
 * `insecure_cluster`: *Optional.* Skip TLS verification for cluster API. (Required if `cluster_ca` is nil)
-* `token`: *Optional.* Bearer token for Kubernetes.  This, 'token_path' or `admin_key`/`admin_cert` are required if `cluster_url` is https.
+* `token`: *Optional.* Bearer token for Kubernetes.  This, `token_path` or `admin_key`/`admin_cert` are required if `cluster_url` is https.
 * `token_path`: *Optional.* Path to file containing the bearer token for Kubernetes.  This, 'token' or `admin_key`/`admin_cert` are required if `cluster_url` is https.
 * `admin_key`: *Optional.* Base64 encoded PEM. Required if `cluster_url` is https and no `token` or 'token_path' is provided.
 * `admin_cert`: *Optional.* Base64 encoded PEM. Required if `cluster_url` is https and no `token` or 'token_path' is provided.
@@ -40,6 +40,11 @@ resource_types:
 * `stable_repo`: *Optional* A `false` value will disable using a default Helm stable repo. Any other value will be used to Override default Helm stable repo URL <https://charts.helm.sh/stable>. Useful if running helm deploys without internet access.
 * `tracing_enabled`: *Optional.* Enable extremely verbose tracing for this resource. Useful when developing the resource itself. May allow secrets to be displayed. (Default: false)
 * `helm_setup_purge_all`: *Optional.* Delete and purge every helm release. Use with extreme caution. (Default: false)
+
+## Source options for DigitalOcean
+
+* `digitalocean.cluster_id` *Optional.* ClusterID on digitalocean to fetch kubeconfig.
+* `digitalocean.access_token` *Optionl.* Read Access Token to fetch kubeconfig.
 
 ## Behavior
 
@@ -91,6 +96,7 @@ Deploy an helm chart
 
 Define the resource:
 
+Generic
 ```yaml
 resources:
 - name: myapp-helm
@@ -100,6 +106,20 @@ resources:
     cluster_ca: _base64 encoded CA pem_
     admin_key: _base64 encoded key pem_
     admin_cert: _base64 encoded certificate pem_
+    repos:
+      - name: some_repo
+        url: https://somerepo.github.io/charts
+```
+
+DigitalOcean
+```yaml
+resources:
+- name: myapp-helm
+  type: helm
+  source:
+    digitalocean:
+      cluster_id: XXXXXXXXXXXXXX
+      access_token: XXXXXXXXXXX
     repos:
       - name: some_repo
         url: https://somerepo.github.io/charts
