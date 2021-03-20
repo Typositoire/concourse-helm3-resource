@@ -18,7 +18,7 @@ RUN curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/
 
 ARG DOCTL_VERSION=1.57.0
 RUN curl -sL -o /tmp/doctl.tar.gz https://github.com/digitalocean/doctl/releases/download/v${DOCTL_VERSION}/doctl-${DOCTL_VERSION}-linux-amd64.tar.gz && \
-  tar zxvf /tmp/doctl.tar.gz -C /usr/local/bin && \
+  tar -C /usr/local/bin -zxvf /tmp/doctl.tar.gz && \
   chmod +x /usr/local/bin/doctl
 
 COPY entrypoint.sh /entrypoint.sh
