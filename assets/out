@@ -183,6 +183,10 @@ helm_upgrade() {
     upgrade_diff_args+=("--reset-values")
   fi
 
+  if [ "$devel" == "true" ]; then
+    upgrade_args+=("--devel")
+  fi
+
   upgrade_args+=("--timeout=${timeout}")
 
   # Only if upgrade we can use history_max flag
