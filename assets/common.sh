@@ -81,13 +81,19 @@ setup_gcp_kubernetes() {
     exit 1
   fi
 
-  echo "$gcloud_service_account_key_file" >> /gcloud.json
-  gcloud_service_account_name=($(cat /gcloud.json | jq -r ".client_email"))
-  gcloud auth activate-service-account ${gcloud_service_account_name} --key-file /gcloud.json
+  if [[ -f $gcloud_service_account_key_file ]]; then
+    echo "service acccount $gcloud_service_account_key_file is passed as a file"
+    gcloud_path="$gcloud_service_account_key_file"
+  else
+    echo "$gcloud_service_account_key_file" >> /gcloud.json
+    gcloud_path="/gcloud.json"
+  fi
+  gcloud_service_account_name=($(cat $gcloud_path | jq -r ".client_email"))
+  gcloud auth activate-service-account ${gcloud_service_account_name} --key-file $gcloud_path
   gcloud config set account ${gcloud_service_account_name}
   gcloud config set project ${gcloud_project_name}
   gcloud container clusters get-credentials ${gcloud_k8s_cluster_name} --zone ${gcloud_k8s_zone}
-  kubectl version
+
 }
 
 setup_helm() {
@@ -183,10 +189,12 @@ setup_resource() {
   digitalocean=$(jq -r '.source.digitalocean // "false"' < $1)
   do_cluster_id=$(jq -r '.source.digitalocean.cluster_id // "false"' < $1)
   do_access_token=$(jq -r '.source.digitalocean.access_token // "false"' < $1)
+  gcloud_cluster_auth=$(jq -r '.source.gcloud_cluster_auth // "false"' < $1)
 
-  echo "Initializing kubectl..."
-  if [ "$digitalocean" == "false" ]; then
-    gcloud_cluster_auth=$(jq -r '.source.gcloud_cluster_auth // "false"' < $1)
+  if [ "$do_cluster_id" != "false" ] && [ "$do_access_token" != "false" ]; then
+    echo "Initializing digitalocean..."
+    setup_doctl $1 $2
+  else
     if [ "$gcloud_cluster_auth" = "true" ]; then
       echo "Initializing kubectl access using gcloud service account file"
       setup_gcp_kubernetes $1 $2
@@ -194,9 +202,6 @@ setup_resource() {
       echo "Initializing kubectl using certificates"
       setup_kubernetes $1 $2
     fi
-  elif [ "$do_cluster_id" != "false" ] && [ "$do_access_token" != "false" ]; then
-    echo "Initializing digitalocean..."
-    setup_doctl $1 $2
   fi
 
   echo "Initializing helm..."

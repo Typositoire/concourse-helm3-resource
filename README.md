@@ -24,16 +24,6 @@ resource_types:
 
 ## Source Configuration
 
--   `gcloud_cluster_auth`: _Optional._ Set to true to use gcloud service account file for kubernetes cluster authentication.
-
--   `gcloud_service_account_key_file`: _Optional_ Manadatory if gcloud_cluster_auth is set to true. Pass gcloud service accon json contents as value.
-
--   `gcloud_project_name`: _Optional_ Manadatory if gcloud_cluster_auth is set to true. Pass gcloud project name where cluster is installed.
-
--   `gcloud_k8s_cluster_name`: _Optional_ Manadatory if gcloud_cluster_auth is set to true. Pass gcloud cluster name.
-
--   `gcloud_k8s_zone`: _Optional_ Manadatory if gcloud_cluster_auth is set to true. Pass gcloud kubernetes cluster zone.
-
 -   `cluster_url`: _Optional._ URL to Kubernetes Master API service. Do not set when using the `kubeconfig_path` parameter, otherwise required.
 -   `cluster_ca`: _Optional._ Cluster CA certificate PEM, optionally Base64 encoded. (Required if `insecure_cluster` == false)
 -   `insecure_cluster`: _Optional._ Skip TLS verification for cluster API. (Required if `cluster_ca` is nil)
@@ -49,6 +39,18 @@ resource_types:
 -   `stable_repo`: _Optional_ A `false` value will disable using a default Helm stable repo. Any other value will be used to Override default Helm stable repo URL <https://charts.helm.sh/stable>. Useful if running helm deploys without internet access.
 -   `tracing_enabled`: _Optional._ Enable extremely verbose tracing for this resource. Useful when developing the resource itself. May allow secrets to be displayed. (Default: false)
 -   `helm_setup_purge_all`: _Optional._ Delete and purge every helm release. Use with extreme caution. (Default: false)
+
+## Source options for Google Cloud
+
+-   `gcloud_cluster_auth`: _Optional._ Set to true to use gcloud service account file for kubernetes cluster authentication.
+
+-   `gcloud_service_account_key_file`: _Optional_ Manadatory if gcloud_cluster_auth is set to true. Pass gcloud service accon json contents as value.
+
+-   `gcloud_project_name`: _Optional_ Manadatory if gcloud_cluster_auth is set to true. Pass gcloud project name where cluster is installed.
+
+-   `gcloud_k8s_cluster_name`: _Optional_ Manadatory if gcloud_cluster_auth is set to true. Pass gcloud cluster name.
+
+-   `gcloud_k8s_zone`: _Optional_ Manadatory if gcloud_cluster_auth is set to true. Pass gcloud kubernetes cluster zone.
 
 ## Source options for DigitalOcean
 
@@ -136,6 +138,23 @@ resources:
         url: https://somerepo.github.io/charts
 ```
 
+Google cloud
+```yaml
+resources:
+- name: myapp-helm
+  type: helm
+  source:
+    gcloud_cluster_auth: true
+    gcloud_service_account_key_file: _plain service account json file_ or _path to json file
+    gcloud_project_name: _project name_
+    gcloud_k8s_cluster_name: _k8s cluster name_
+    gcloud_k8s_zone: _k8s zone_
+    repos:
+      - name: some_repo
+        url: https://somerepo.github.io/charts
+```
+
+
 Add to job:
 
 ```yaml
@@ -157,21 +176,4 @@ jobs:
       - key: image.tag
         path: version/image_tag # Read value from version/number
         type: string            # Make sure it's interpreted as a string by Helm (not a number)
-```
-
-Define the resource for authentication with gcloud sevice account json as follows:
-
-```yaml
-resources:
-- name: myapp-helm-gcloud
-  type: helm
-  source:
-    gcloud_cluster_auth: true
-    gcloud_service_account_key_file: _plain service account json file_
-    gcloud_project_name: _project name_
-    gcloud_k8s_cluster_name: _k8s cluster name_
-    gcloud_k8s_zone: _k8s zone_
-    repos:
-      - name: some_repo
-        url: https://somerepo.github.io/charts
 ```
