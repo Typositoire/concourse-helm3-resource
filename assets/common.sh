@@ -194,14 +194,12 @@ setup_resource() {
   if [ "$do_cluster_id" != "false" ] && [ "$do_access_token" != "false" ]; then
     echo "Initializing digitalocean..."
     setup_doctl $1 $2
+  elif [ "$gcloud_cluster_auth" = "true" ]; then
+    echo "Initializing kubectl access using gcloud service account file"
+    setup_gcp_kubernetes $1 $2
   else
-    if [ "$gcloud_cluster_auth" = "true" ]; then
-      echo "Initializing kubectl access using gcloud service account file"
-      setup_gcp_kubernetes $1 $2
-    else
-      echo "Initializing kubectl using certificates"
-      setup_kubernetes $1 $2
-    fi
+    echo "Initializing kubectl using certificates"
+    setup_kubernetes $1 $2
   fi
 
   echo "Initializing helm..."
