@@ -67,6 +67,35 @@ setup_kubernetes() {
   kubectl version
 }
 
+setup_gcp_kubernetes() {
+  payload=$1
+  source=$2
+
+  gcloud_service_account_key_file=$(jq -r '.source.gcloud_service_account_key_file // ""' < $payload)
+  gcloud_project_name=$(jq -r '.source.gcloud_project_name // ""' < $payload)
+  gcloud_k8s_cluster_name=$(jq -r '.source.gcloud_k8s_cluster_name // ""' < $payload)
+  gcloud_k8s_zone=$(jq -r '.source.gcloud_k8s_zone // ""' < $payload)
+
+  if [ -z "$gcloud_service_account_key_file" ] || [ -z "$gcloud_project_name" ] || [ -z "$gcloud_k8s_cluster_name" ] || [ -z "$gcloud_k8s_zone" ]; then
+    echo "invalid payload for gcloud auth, please pass all required params"
+    exit 1
+  fi
+
+  if [[ -f $gcloud_service_account_key_file ]]; then
+    echo "service acccount $gcloud_service_account_key_file is passed as a file"
+    gcloud_path="$gcloud_service_account_key_file"
+  else
+    echo "$gcloud_service_account_key_file" >> /gcloud.json
+    gcloud_path="/gcloud.json"
+  fi
+  gcloud_service_account_name=($(cat $gcloud_path | jq -r ".client_email"))
+  gcloud auth activate-service-account ${gcloud_service_account_name} --key-file $gcloud_path
+  gcloud config set account ${gcloud_service_account_name}
+  gcloud config set project ${gcloud_project_name}
+  gcloud container clusters get-credentials ${gcloud_k8s_cluster_name} --zone ${gcloud_k8s_zone}
+
+}
+
 setup_helm() {
   # $1 is the name of the payload file
   # $2 is the name of the source directory
@@ -157,8 +186,30 @@ setup_resource() {
     set -x
   fi
 
-  echo "Initializing kubectl..."
-  setup_kubernetes $1 $2
+  digitalocean=$(jq -r '.source.digitalocean // "false"' < $1)
+  do_cluster_id=$(jq -r '.source.digitalocean.cluster_id // "false"' < $1)
+  do_access_token=$(jq -r '.source.digitalocean.access_token // "false"' < $1)
+  gcloud_cluster_auth=$(jq -r '.source.gcloud_cluster_auth // "false"' < $1)
+
+  if [ "$do_cluster_id" != "false" ] && [ "$do_access_token" != "false" ]; then
+    echo "Initializing digitalocean..."
+    setup_doctl $1 $2
+  elif [ "$gcloud_cluster_auth" = "true" ]; then
+    echo "Initializing kubectl access using gcloud service account file"
+    setup_gcp_kubernetes $1 $2
+  else
+    echo "Initializing kubectl using certificates"
+    setup_kubernetes $1 $2
+  fi
+
   echo "Initializing helm..."
   setup_helm $1 $2
+}
+
+setup_doctl() {
+  doctl_token=$(jq -r '.source.digitalocean.access_token // ""' < $payload)
+  doctl_cluster_id=$(jq -r '.source.digitalocean.cluster_id // ""' < $payload)
+  doctl auth init -t $doctl_token
+
+  doctl kubernetes cluster kubeconfig save $doctl_cluster_id
 }
