@@ -14,7 +14,11 @@ setup_kubernetes() {
   mkdir -p /root/.kube
   kubeconfig_path=$(jq -r '.params.kubeconfig_path // ""' < $payload)
   absolute_kubeconfig_path="${source}/${kubeconfig_path}"
-  if [ -f "$absolute_kubeconfig_path" ]; then
+  kubeconfig=$(jq -r '.params.kubeconfig // ""' < $payload)
+  if [ ! -z "$kubeconfig" ]; then
+    echo "$kubeconfig" > /root/.kube/config
+    chmod 600 /root/.kube/config
+  elif [ -f "$absolute_kubeconfig_path" ]; then
     cp "$absolute_kubeconfig_path" "/root/.kube/config"
   else
     # Setup kubectl
