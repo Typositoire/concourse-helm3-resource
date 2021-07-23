@@ -208,7 +208,7 @@ helm_upgrade() {
     $helm_bin "${helm_depup_args[@]}" | tee "$logfile"
   fi
 
-  if [ "$show_diff" = true ] && [ "$devel" != true ]; then
+  if [ "$show_diff" = true ] ; then
     echo "Release diff:"
     $helm_bin diff "${helm_diff_args[@]}" | tee "$logfile"
   fi
