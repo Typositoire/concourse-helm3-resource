@@ -2,150 +2,187 @@
 # team:           main
 
 ---
-resource_types:
-- name: pull-request
-  type: docker-image
-  source:
-    repository: teliaoss/github-pr-resource
+# resource_types:
+#   - name: pull-request
+#     type: docker-image
+#     source:
+#       repository: teliaoss/github-pr-resource
 
 resources:
-# - name: master
-#   type: git
-#   source:
-#     uri: git@github.com:typositoire/concourse-helm3-resource.git
-#     branch: master
-#     private_key: ((api.deploy_key))
+  # - name: pull-request
+  #   type: pull-request
+  #   check_every: 24h
+  #   webhook_token: ((github.webhook_token))
+  #   source:
+  #     repository: typositoire/concourse-helm3-resource
+  #     access_token: ((github.access_token))
 
-- name: pull-request
-  type: pull-request
-  check_every: 24h
-  webhook_token: ((github.webhook_token))
-  source:
-    repository: typositoire/concourse-helm3-resource
-    access_token: ((github.access_token))
+  - name: master-version
+    type: git
+    source:
+      paths:
+        - VERSION
+      uri: git@github.com:typositoire/concourse-helm3-resource.git
+      branch: master
+      private_key: ((github.deploy_key))
 
-- name: master-version
-  type: git
-  source:
-    paths:
-      - VERSION
-    uri: git@github.com:typositoire/concourse-helm3-resource.git
-    branch: master
-    private_key: ((github.deploy_key))
+  - name: master-version-write
+    type: git
+    source:
+      uri: git@github.com:typositoire/concourse-helm3-resource.git
+      branch: master
+      private_key: ((github.deploy_key))
 
-- name: master-tags
-  type: git
-  source:
-    uri: git@github.com:typositoire/concourse-helm3-resource.git
-    branch: master
-    private_key: ((github.deploy_key))
-    tag_filter: "v*.*.*"
+  - name: master-tags
+    type: git
+    source:
+      uri: git@github.com:typositoire/concourse-helm3-resource.git
+      branch: master
+      private_key: ((github.deploy_key))
+      tag_filter: "v*.*.*"
+
+  # - name: master
+  #   type: git
+  #   source:
+  #     uri: git@github.com:typositoire/concourse-helm3-resource.git
+  #     branch: master
+  #     private_key: ((github.deploy_key))
+
+  - name: resource-image
+    type: registry-image
+    source:
+      repository: typositoire/concourse-helm3-resource
+      username: typositoire
+      password: ((dockerhub.typositoire))
+      tag: latest
 
 jobs:
-# - name: build-master
-#   plan:
-#     - get: master
-#       trigger: true
-#       passed: [test-master]
-#     - task: build-task-image
-#       privileged: true
-#       config:
-#         platform: linux
-#         image_resource:
-#           type: registry-image
-#           source:
-#             repository: vito/oci-build-task
-#         inputs:
-#         - name: master
-#         outputs:
-#         - name: image
-#         run:
-#           path: build
-#         params:
-#           CONTEXT: master/
+  # - name: build-image-latest
+  #   plan:
+  #     - get: master
+  #       trigger: true
+  #       version: every
+  #     - task: build
+  #       privileged: true
+  #       config:
+  #         platform: linux
+  #         image_resource:
+  #           type: registry-image
+  #           source:
+  #             repository: concourse/oci-build-task
+  #         inputs:
+  #           - name: master
+  #             path: .
+  #         outputs:
+  #           - name: image
+  #         run:
+  #           path: build
+  #     - put: resource-image
+  #       params:
+  #         image: image/image.tar
 
-- name: tag-master
-  plan:
-    - get:  master-version
-      trigger: true
-    - task: compute-info
-      config:
-        platform: linux
-        image_resource:
-          type: registry-image
-          source:
-            repository: alpine/git
-        inputs:
-        - name:  master-version
-        outputs:
-        - name: info
-        run:
-          path: sh
-          args:
-            - -c
-            - |
-              #!/bin/sh
+  - name: build-image-tag
+    plan:
+      - get: master-tags
+        trigger: true
+        version: every
+      - task: build
+        privileged: true
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: concourse/oci-build-task
+          inputs:
+            - name: master-tags
+              path: .
+          outputs:
+            - name: image
+          run:
+            path: build
+      - put: resource-image
+        params:
+          image: image/image.tar
+          additional_tags: master-tags/.git/ref
 
-              cd master-version
-              git log $(git describe --tags --abbrev=0)..HEAD --oneline > ../info/notes
+  - name: tag-master
+    plan:
+      - get: master-version
+        trigger: true
+        version: every
+      - task: compute-info
+        config:
+          platform: linux
+          image_resource:
+            type: registry-image
+            source:
+              repository: alpine/git
+          inputs:
+            - name: master-version
+          outputs:
+            - name: info
+          run:
+            path: sh
+            args:
+              - -c
+              - |
+                #!/bin/sh
 
-              echo v$(cat VERSION) > ../info/tag
-    - put: master-version
-      params:
-        repository:  master-version
-        tag: info/tag
-        only_tag: true
-        branch: master
-        annotate: info/notes
+                cd master-version
+                git log $(git describe --tags --abbrev=0)..HEAD --oneline > ../info/notes
 
-- name: validate-prs
-  plan:
-    - in_parallel:
-        steps:
-        - get: pull-request
-          trigger: true
-          version: every
-        - get: master-tags
-          params:
-            fetch_tags: true
-    - put: pull-request
-      params:
-        path: pull-request
-        status: pending
-    - task: check-for-version-bump
-      config:
-        platform: linux
-        image_resource:
-          type: registry-image
-          source:
-            repository: alpine/git
-        inputs:
-        - name: pull-request
-        - name: master-tags
-        outputs:
-        - name: pr-notes
-        run:
-          path: sh
-          args:
-            - -c
-            - |
-              #!/bin/sh
-
-              set -ex
-
-              LAST_TAG="$(cat master-tags/.git/ref)"
-
-              NEW_TAG="v$(cat pull-request/VERSION)"
-
-              RESULT=$(pull-request/ci/assets/checksemver.sh ${NEW_TAG} ${LAST_TAG})
-
-              if [ "${RESULT}" == "1" ]; then
-                echo "Coolio"
-                exit 0
-              elif [ "${RESULT}" == "0" ]; then
-                echo "Version bump did not happen. ${LAST_TAG} is the same as ${NEW_TAG}"
-                exit 1
-              else
-                echo "Version bump did not happen. ${LAST_TAG} is higher than ${NEW_TAG}"
-                exit 1
-              fi
+                echo v$(cat VERSION) > ../info/tag
+      - put: master-version-write
+        params:
+          repository: master-version
+          tag: info/tag
+          only_tag: true
+          branch: master
+          annotate: info/notes
+  # - name: validate-prs
+  #   plan:
+  #     - in_parallel:
+  #         steps:
+  #           - get: pull-request
+  #             trigger: true
+  #             version: every
+  #           - get: master-tags
+  #             params:
+  #               fetch_tags: true
+  #     - put: pull-request
+  #       params:
+  #         path: pull-request
+  #         status: pending
+  #     - task: check-for-version-bump
+  #       config:
+  #         platform: linux
+  #         image_resource:
+  #           type: registry-image
+  #           source:
+  #             repository: alpine/git
+  #         inputs:
+  #           - name: pull-request
+  #           - name: master-tags
+  #         outputs:
+  #           - name: pr-notes
+  #         run:
+  #           path: sh
+  #           args:
+  #             - -c
+  #             - |
+  #               #!/bin/sh
+  #               set -ex
+  #               LAST_TAG="$(cat master-tags/.git/ref)"
+  #               NEW_TAG="v$(cat pull-request/VERSION)"
+  #               RESULT=$(pull-request/ci/assets/checksemver.sh ${NEW_TAG} ${LAST_TAG})
+  #               if [ "${RESULT}" == "1" ]; then
+  #                 echo "Coolio"
+  #                 exit 0
+  #               elif [ "${RESULT}" == "0" ]; then
+  #                 echo "Version bump did not happen. ${LAST_TAG} is the same as ${NEW_TAG}"
+  #                 exit 1
+  #               else
+  #                 echo "Version bump did not happen. ${LAST_TAG} is higher than ${NEW_TAG}"
+  #                 exit 1
+  #               fi
