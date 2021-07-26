@@ -185,6 +185,7 @@ helm_upgrade() {
 
   if [ "$devel" == "true" ]; then
     upgrade_args+=("--devel")
+    upgrade_diff_args+=("--devel")
   fi
 
   upgrade_args+=("--timeout=${timeout}")
