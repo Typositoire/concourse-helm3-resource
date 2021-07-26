@@ -87,6 +87,7 @@ jobs:
             type: registry-image
             source:
               repository: alpine/git
+              tag: v2.30.2
           inputs:
             - name: master-version
           outputs:
