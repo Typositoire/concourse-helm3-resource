@@ -7,10 +7,15 @@ Heavily based on the work of [`linkyard/concourse-helm-resource`][linkyard].
 [linkyard]: https://github.com/linkyard/concourse-helm-resource
 
 ## Docker Image
-
 You can pull the resource image from [`typositoire/concourse-helm3-resource`][dockerhub]. !["Dockerhub Pull Badge"](https://img.shields.io/docker/pulls/typositoire/concourse-helm3-resource.svg "Dockerhub Pull Badge")
 
 [dockerhub]: https://hub.docker.com/repository/docker/typositoire/concourse-helm3-resource
+
+### DEPRECATION OF DOCKER HUB
+
+Starting with version 1.19.1, you can pull the resource from Github [`ghcr.io/typositoire/concourse-helm3-resource`][github packages]. Docker hub will eventually stop receiving new images.
+
+[github packages]: https://github.com/Typositoire/concourse-helm3-resource/pkgs/container/concourse-helm3-resource
 
 ## Usage
 
