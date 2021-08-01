@@ -49,6 +49,14 @@ resources:
       password: ((dockerhub.typositoire))
       tag: latest
 
+  - name: resource-image-gh
+    type: registry-image
+    source:
+      repository: ghcr.io/typositoire/concourse-helm3-resource
+      username: typositoire
+      password: ((github.access_token))
+      tag: latest
+
 jobs:
   - name: build-image-tag
     plan:
@@ -70,10 +78,16 @@ jobs:
             - name: image
           run:
             path: build
-      - put: resource-image
-        params:
-          image: image/image.tar
-          additional_tags: master-tags/.git/ref
+      - in_parallel:
+          steps:
+            - put: resource-image-gh
+              params:
+                image: image/image.tar
+                additional_tags: master-tags/.git/ref
+            - put: resource-image
+              params:
+                image: image/image.tar
+                additional_tags: master-tags/.git/ref
 
   - name: tag-master
     plan:
@@ -158,10 +172,10 @@ jobs:
                       #!/bin/sh
                       set -e
 
-                      NO_CI_FILES="$(cat pull-request/.git/resource/changed_files | grep -v "ci" | wc -l)"
+                      NO_CI_FILES="$(cat pull-request/.git/resource/changed_files | grep -v "ci" | grep -v "README.md" | wc -l)"
 
                       if [ "${NO_CI_FILES}" == "0" ]; then
-                        echo "Only CI files where changed, no version bump needed"
+                        echo "Concourse: Only CI files where changed, no version bump needed" | tee pr-notes/msg
                         exit 0
                       fi
 
@@ -169,16 +183,18 @@ jobs:
                       NEW_TAG="v$(cat pull-request/VERSION)"
                       RESULT=$(pull-request/ci/assets/checksemver.sh ${NEW_TAG} ${LAST_TAG})
                       if [ "${RESULT}" == "1" ]; then
-                        echo "Coolio"
+                        echo "Concourse: Version bump found." | tee pr-notes/msg
                         exit 0
                       elif [ "${RESULT}" == "0" ]; then
-                        echo "Version bump did not happen. ${LAST_TAG} is the same as ${NEW_TAG}"
+                        echo "Concourse: Version bump did not happen. ${LAST_TAG} is the same as ${NEW_TAG}" | tee pr-notes/msg
                         exit 1
                       else
-                        echo "Version bump did not happen. ${LAST_TAG} is higher than ${NEW_TAG}"
+                        echo "Concourse: Version bump did not happen. ${LAST_TAG} is higher than ${NEW_TAG}" | tee pr-notes/msg
                         exit 1
                       fi
       - put: pull-request
         params:
           path: pull-request
           status: success
+          delete_previous_comments: true
+          comment_file: pr-notes/msg
