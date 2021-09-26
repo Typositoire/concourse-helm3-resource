@@ -106,6 +106,7 @@ Deploy an helm chart
 -   `kubeconfig_path`: _Optional._ File containing a kubeconfig. Overrides source configuration for cluster, token, and admin config.
 -   `show_diff`: _Optional._ Show the diff that is applied if upgrading an existing successful release. (Default: false)
 -   `skip_missing_values:` _Optional._ Missing values files are skipped if they are specified in the values but do not exist. (Default false)
+-   `post_renderer`: _Optional._ A path to any executable that accepts rendered Kubernetes manifests.
 
 ## Example
 
