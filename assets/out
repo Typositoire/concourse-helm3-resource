@@ -149,7 +149,6 @@ helm_upgrade() {
   if [ "$debug" == "true" ]; then
     upgrade_args+=("--debug")
     upgrade_args+=("--dry-run")
-    upgrade_diff_args+=("--dry-run")
   fi
 
   if [ -n "$version" ]; then
