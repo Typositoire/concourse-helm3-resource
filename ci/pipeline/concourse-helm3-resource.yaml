@@ -151,6 +151,8 @@ jobs:
                 params:
                   path: pull-request
                   status: failure
+                  delete_previous_comments: true
+                  comment_file: pr-notes/msg
                 get_params: { skip_download: true }
               config:
                 platform: linux
