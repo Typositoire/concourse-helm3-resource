@@ -1,5 +1,7 @@
 # Helm Resource for Concourse
 
+![CI Build](https://concourse.pubb-it.com/api/v1/teams/main/pipelines/concourse-helm3-resource/jobs/build-image-tag/badge)
+
 Deploy [Helm Charts](https://github.com/helm/helm) from [Concourse](https://concourse-ci.org/).
 
 Heavily based on the work of [`linkyard/concourse-helm-resource`][linkyard].
