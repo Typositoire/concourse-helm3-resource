@@ -106,6 +106,8 @@ Deploy an helm chart
 -   `kubeconfig_path`: _Optional._ File containing a kubeconfig. Overrides source configuration for cluster, token, and admin config.
 -   `show_diff`: _Optional._ Show the diff that is applied if upgrading an existing successful release. (Default: false)
 -   `skip_missing_values:` _Optional._ Missing values files are skipped if they are specified in the values but do not exist. (Default false)
+-   `rollback:` _Optional._ Rollback release instead of deploying, parameter `Release` is required. Rollback to a revision `target_revision` of the release. Rollback to a previous revision if `target_revision` is empty. (Default false)
+-   `target_revision:` _Optional._ Revision of the release `Release` to rollback to. (Default false)
 
 ## Example
 

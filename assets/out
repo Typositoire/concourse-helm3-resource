@@ -43,6 +43,8 @@ wait=$(jq -r '.params.wait // 0' < $payload)
 check_is_ready=$(jq -r '.params.check_is_ready // "false"' < $payload)
 timeout=$(jq -r '.params.timeout // "5m0s"' < $payload)
 skip_missing_values=$(jq -r '.params.skip_missing_values // "false"' < $payload)
+rollback=$(jq -r '.params.rollback // "false"' < $payload)
+target_revision=$(jq -r '.params.target_revision // ""' < $payload)
 
 if [[ "$test" == "false" ]] && [[ "$delete" == "false" ]] && [ -z "$chart" ] ; then
   echo "invalid payload (missing chart)"
@@ -269,10 +271,51 @@ helm_test() {
   $helm_bin ${test_args[@]} | tee $logfile
 }
 
+helm_rollback() {
+  if [ -z "$release" ]; then
+      echo "invalid payload (missing release if rollback=true)"
+      exit 1
+  fi
+
+  rollback_args=("rollback")
+
+  if [ "$debug" = true ]; then
+    rollback_args+=("--dry-run" "--debug")
+  fi
+
+  rollback_args+=("--namespace=$namespace")
+
+  if [ -n "$target_revision" ]; then
+    rollback_args+=("$release $target_revision")
+  else
+    deployed=$(current_deployed "$release")
+    # Previous revision
+    target_revision=$(($(echo "$deployed" | awk '{ print $1 }')-1))
+    rollback_args+=("$release")
+  fi
+
+  logfile="/tmp/log"
+  mkdir -p /tmp
+
+  echo "Rolling back to the revision $target_revision of release $release..."
+  echo "Running command helm ${rollback_args[@]} | tee $logfile"
+  $helm_bin "${rollback_args[@]}" | tee $logfile
+}
+
 if [ "$delete" = true ]; then
   helm_delete
   result="$(jq -n "{version:{release:\"$release\", deleted: \"true\"}, metadata: [{name: \"release\", value: \"$release\"}]}")"
   echo "$result" | jq -s add  >&3
+elif [ "$rollback" = true ]; then
+    helm_rollback
+
+    deployed=$(current_deployed "$release")
+    revision=$(echo "$deployed" | awk '{ print $1 }')
+
+    echo "Rolled back to revision $target_revision of $release"
+    result="$(jq -n "{version:{release:\"$release\", revision:\"$revision\"}, metadata: [{name: \"release\", value: \"$release\"},{name: \"revision\", value: \"$revision\"},{name: \"chart\", value: \"$chart\"}]}")"
+    echo "$result" | jq -s add  >&3
+
 elif [ "$test" = true ]; then
   helm_test
   result="$(jq -n "{version:{release:\"$release\", tested: \"true\"}, metadata: [{name: \"release\", value: \"$release\"}]}")"
