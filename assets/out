@@ -29,7 +29,7 @@ release_overwrite=$(jq -r '.params.release // ""' < $payload)
 values=$(jq -r '.params.values // "" | if type == "array" then .[] else . end' < $payload)
 debug=$(jq -r '.params.debug // "false"' < $payload)
 replace=$(jq -r '.params.replace // "false"' < $payload)
-delete=$(jq -r '.params.delete // "false"' < $payload)
+uninstall=$(jq -r '.params.uninstall // "false"' < $payload)
 test=$(jq -r '.params.test // "false"' < $payload)
 test_logs=$(jq -r '.params.test_logs // "false"' < $payload)
 purge=$(jq -r '.params.purge // "false"' < $payload)
@@ -44,13 +44,13 @@ check_is_ready=$(jq -r '.params.check_is_ready // "false"' < $payload)
 timeout=$(jq -r '.params.timeout // "5m0s"' < $payload)
 skip_missing_values=$(jq -r '.params.skip_missing_values // "false"' < $payload)
 
-if [[ "$test" == "false" ]] && [[ "$delete" == "false" ]] && [ -z "$chart" ] ; then
+if [[ "$test" == "false" ]] && [[ "$uninstall" == "false" ]] && [ -z "$chart" ] ; then
   echo "invalid payload (missing chart)"
   exit 1
 fi
 
-if [[ "$test" == "true" ]] && [[ "$delete" == "true" ]] ; then
-  echo "invalid payload ( test and delete cannot both be true )"
+if [[ "$test" == "true" ]] && [[ "$uninstall" == "true" ]] ; then
+  echo "invalid payload ( test and uninstall cannot both be true )"
   exit 1
 fi
 
@@ -226,24 +226,24 @@ helm_upgrade() {
   fi
 }
 
-helm_delete() {
+helm_uninstall() {
   if [ -z "$release" ]; then
-    echo "invalid payload (missing release if delete=true)"
+    echo "invalid payload (missing release if uninstall=true)"
     exit 1
   fi
 
-  echo "Deleting the release $release..."
-  delete_args=("delete")
+  echo "Uninstalling the release $release..."
+  uninstall_args=("uninstall")
   if [ "$debug" = true ]; then
-    delete_args+=("--dry-run" "--debug")
+    uninstall_args+=("--dry-run" "--debug")
   fi
 
-  delete_args+=("$release" "--namespace=$namespace")
+  uninstall_args+=("$release" "--namespace=$namespace")
   logfile="/tmp/log"
   mkdir -p /tmp
 
-  echo "Running command helm ${delete_args[@]} | tee $logfile"
-  $helm_bin "${delete_args[@]}" | tee $logfile
+  echo "Running command helm ${uninstall_args[@]} | tee $logfile"
+  $helm_bin "${uninstall_args[@]}" | tee $logfile
 }
 
 helm_test() {
@@ -269,9 +269,9 @@ helm_test() {
   $helm_bin ${test_args[@]} | tee $logfile
 }
 
-if [ "$delete" = true ]; then
-  helm_delete
-  result="$(jq -n "{version:{release:\"$release\", deleted: \"true\"}, metadata: [{name: \"release\", value: \"$release\"}]}")"
+if [ "$uninstall" = true ]; then
+  helm_uninstall
+  result="$(jq -n "{version:{release:\"$release\", uninstalled: \"true\"}, metadata: [{name: \"release\", value: \"$release\"}]}")"
   echo "$result" | jq -s add  >&3
 elif [ "$test" = true ]; then
   helm_test
