@@ -54,6 +54,16 @@ if [[ "$test" == "true" ]] && [[ "$uninstall" == "true" ]] ; then
   exit 1
 fi
 
+if [[ "$test" == "true" ]] && [[ "$replace" == "true" ]] ; then
+  echo "invalid payload ( test and replace cannot both be true )"
+  exit 1
+fi
+
+if [[ "$uninstall" == "true" ]] && [[ "$replace" == "true" ]] ; then
+  echo "invalid payload ( uninstall and replace cannot both be true )"
+  exit 1
+fi
+
 if [ -f "$source/$namespace_overwrite" ]; then
   namespace=$(cat $source/$namespace_overwrite)
 elif [ -n "$namespace_overwrite" ]; then
@@ -275,6 +285,11 @@ if [ "$uninstall" = true ]; then
   echo "$result" | jq -s add  >&3
 elif [ "$test" = true ]; then
   helm_test
+  result="$(jq -n "{version:{release:\"$release\", tested: \"true\"}, metadata: [{name: \"release\", value: \"$release\"}]}")"
+  echo "$result" | jq -s add  >&3
+elif [ "$replace" = true ]; then
+  helm_uninstall
+  helm_upgrade
   result="$(jq -n "{version:{release:\"$release\", tested: \"true\"}, metadata: [{name: \"release\", value: \"$release\"}]}")"
   echo "$result" | jq -s add  >&3
 else
