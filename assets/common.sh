@@ -116,7 +116,7 @@ setup_helm() {
     local release
     for release in $(helm ls -aq --namespace $namespace )
     do
-      helm delete --purge "$release" --namespace $namespace
+      helm uninstall "$release" --namespace $namespace
     done
   fi
 }
