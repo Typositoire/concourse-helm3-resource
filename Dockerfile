@@ -1,4 +1,4 @@
-FROM alpine/helm:3.4.2
+FROM alpine/helm:3.8.0
 LABEL maintainer "Yann David (@Typositoire) <davidyann88@gmail>"
 
 #Versions for gcloud,kubectl,doctl
