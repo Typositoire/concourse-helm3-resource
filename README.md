@@ -1,5 +1,7 @@
 # Helm Resource for Concourse
 
+![CI Build](https://concourse.pubb-it.com/api/v1/teams/main/pipelines/concourse-helm3-resource/jobs/build-image-tag/badge)
+
 Deploy [Helm Charts](https://github.com/helm/helm) from [Concourse](https://concourse-ci.org/).
 
 Heavily based on the work of [`linkyard/concourse-helm-resource`][linkyard].
@@ -43,7 +45,7 @@ resource_types:
 -   `plugins`: _Optional._ Array of Helm plugins to install, each defined as an object with properties `url` (required), `version` (optional).
 -   `stable_repo`: _Optional_ A `false` value will disable using a default Helm stable repo. Any other value will be used to Override default Helm stable repo URL <https://charts.helm.sh/stable>. Useful if running helm deploys without internet access.
 -   `tracing_enabled`: _Optional._ Enable extremely verbose tracing for this resource. Useful when developing the resource itself. May allow secrets to be displayed. (Default: false)
--   `helm_setup_purge_all`: _Optional._ Delete and purge every helm release. Use with extreme caution. (Default: false)
+-   `helm_setup_purge_all`: _Optional._ Uninstalls and purge every helm release. Use with extreme caution. (Default: false)
 
 ## Source options for Google Cloud
 
@@ -90,9 +92,9 @@ Deploy an helm chart
 -   `version`: _Optional_ Chart version to deploy, can be a file or a value. Only applies if `chart` is not a file.
 -   `test`: _Optional._ Test the release instead of installing it. Requires the `release`. (Default: false)
 -   `test_logs`: _Optional._ Display pod logs when running `test`. (Default: false)
--   `delete`: _Optional._ Deletes the release instead of installing it. Requires the `release`. (Default: false)
--   `replace`: _Optional._ Replace deleted release with same name. (Default: false)
--   `force`: _Optional._ Force resource update through delete/recreate if needed. (Default: false)
+-   `uninstall`: _Optional._ Uninstalls the release instead of installing it. Requires the `release`. (Default: false)
+-   `replace`: _Optional._ Replace uninstall release with same name. (Default: false)
+-   `force`: _Optional._ Force resource update through uninstall/recreate if needed. (Default: false)
 -   `devel`: _Optional._ Allow development versions of chart to be installed. This is useful when wanting to install pre-release
     charts (i.e. 1.0.2-rc1) without having to specify a version. (Default: false)
 -   `debug`: _Optional._ Dry run the helm install with the debug flag which logs interpolated chart templates. (Default: false)
