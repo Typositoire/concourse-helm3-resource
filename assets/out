@@ -287,7 +287,8 @@ if [ "$uninstall" = true ]; then
   if [ "$delete_namespace" = true ] && [ -n "$namespace" ] && [ $debug = false ]; then
     echo "Deleting the namespace $namespace..."
     logfile="/tmp/log"
-    kubectl delete namespaces --ignore-not-found=true "$namespace" | tee "$logfile"
+    mkdir -p /tmp
+    kubectl delete namespaces "$namespace" | tee "$logfile"
   fi
 elif [ "$test" = true ]; then
   helm_test
