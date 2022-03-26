@@ -281,15 +281,15 @@ helm_test() {
 
 if [ "$uninstall" = true ]; then
   helm_uninstall
-  result="$(jq -n "{version:{release:\"$release\", uninstalled: \"true\"}, metadata: [{name: \"release\", value: \"$release\"}]}")"
-  echo "$result" | jq -s add  >&3
 
   if [ "$delete_namespace" = true ] && [ -n "$namespace" ] && [ $debug = false ]; then
     echo "Deleting the namespace $namespace..."
     logfile="/tmp/log"
-    mkdir -p /tmp
     kubectl delete namespaces "$namespace" | tee "$logfile"
   fi
+
+  result="$(jq -n "{version:{release:\"$release\", uninstalled: \"true\"}, metadata: [{name: \"release\", value: \"$release\"}]}")"
+  echo "$result" | jq -s add  >&3
 elif [ "$test" = true ]; then
   helm_test
   result="$(jq -n "{version:{release:\"$release\", tested: \"true\"}, metadata: [{name: \"release\", value: \"$release\"}]}")"
