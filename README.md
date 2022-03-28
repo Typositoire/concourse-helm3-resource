@@ -93,6 +93,7 @@ Deploy an helm chart
 -   `test`: _Optional._ Test the release instead of installing it. Requires the `release`. (Default: false)
 -   `test_logs`: _Optional._ Display pod logs when running `test`. (Default: false)
 -   `uninstall`: _Optional._ Uninstalls the release instead of installing it. Requires the `release`. (Default: false)
+-   `delete_namespace`: _Optional._ Deletes the namespace after uninstall. Requires `uninstall` set to true and `namespace`. (Default: false)
 -   `replace`: _Optional._ Replace uninstall release with same name. (Default: false)
 -   `force`: _Optional._ Force resource update through uninstall/recreate if needed. (Default: false)
 -   `devel`: _Optional._ Allow development versions of chart to be installed. This is useful when wanting to install pre-release

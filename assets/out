@@ -30,6 +30,7 @@ values=$(jq -r '.params.values // "" | if type == "array" then .[] else . end' <
 debug=$(jq -r '.params.debug // "false"' < $payload)
 replace=$(jq -r '.params.replace // "false"' < $payload)
 uninstall=$(jq -r '.params.uninstall // "false"' < $payload)
+delete_namespace=$(jq -r '.params.delete_namespace // "false"' < $payload)
 test=$(jq -r '.params.test // "false"' < $payload)
 test_logs=$(jq -r '.params.test_logs // "false"' < $payload)
 devel=$(jq -r '.params.devel // "false"' < $payload)
@@ -280,6 +281,13 @@ helm_test() {
 
 if [ "$uninstall" = true ]; then
   helm_uninstall
+
+  if [ "$delete_namespace" = true ] && [ -n "$namespace" ] && [ $debug = false ]; then
+    echo "Deleting the namespace $namespace..."
+    logfile="/tmp/log"
+    kubectl delete namespaces "$namespace" | tee "$logfile"
+  fi
+
   result="$(jq -n "{version:{release:\"$release\", uninstalled: \"true\"}, metadata: [{name: \"release\", value: \"$release\"}]}")"
   echo "$result" | jq -s add  >&3
 elif [ "$test" = true ]; then
