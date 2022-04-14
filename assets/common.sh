@@ -86,7 +86,7 @@ setup_gcp_kubernetes() {
     exit 1
   fi
 
-  if [ "$gcloud_workload_identity_enabled" == "false" ];
+  if [ "$gcloud_workload_identity_enabled" == "false" ]; then
     if [[ -f $gcloud_service_account_key_file ]]; then
       echo "service acccount $gcloud_service_account_key_file is passed as a file"
       gcloud_path="$gcloud_service_account_key_file"
