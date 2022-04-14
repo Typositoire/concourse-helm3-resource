@@ -51,13 +51,15 @@ resource_types:
 
 -   `gcloud_cluster_auth`: _Optional._ Set to true to use gcloud service account file for kubernetes cluster authentication.
 
--   `gcloud_service_account_key_file`: _Optional_ Manadatory if gcloud_cluster_auth is set to true. Pass gcloud service account json contents as value or a file path containing service_account json.
+-   `gcloud_service_account_key_file`: _Optional_ Mandatory if `gcloud_cluster_auth` is set to true and `gcloud_workload_identity_enabled` is set to `false`. Pass gcloud service account json contents as value or a file path containing service_account json.
 
--   `gcloud_project_name`: _Optional_ Manadatory if gcloud_cluster_auth is set to true. Pass gcloud project name where cluster is installed.
+- `gcloud_workload_identity_enabled`: _Optional_ Mandatory if `gcloud_cluster_auth` is set to true and `gcloud_service_account_key_file` is not set. Workload identity must be enabled on the cluster. (Default: `false`)
 
--   `gcloud_k8s_cluster_name`: _Optional_ Manadatory if gcloud_cluster_auth is set to true. Pass gcloud cluster name.
+-   `gcloud_project_name`: _Optional_ Mandatory if `gcloud_cluster_auth` is set to true. Pass gcloud project name where cluster is installed.
 
--   `gcloud_k8s_zone`: _Optional_ Manadatory if gcloud_cluster_auth is set to true. Pass gcloud kubernetes cluster zone.
+-   `gcloud_k8s_cluster_name`: _Optional_ Mandatory if `gcloud_cluster_auth` is set to true. Pass gcloud cluster name.
+
+-   `gcloud_k8s_zone`: _Optional_ Mandatory if `gcloud_cluster_auth` is set to true. Pass gcloud kubernetes cluster zone.
 
 ## Source options for DigitalOcean
 
