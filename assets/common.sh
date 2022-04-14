@@ -76,6 +76,7 @@ setup_gcp_kubernetes() {
   source=$2
 
   gcloud_service_account_key_file=$(jq -r '.source.gcloud_service_account_key_file // ""' < $payload)
+  gcloud_workload_identity_enabled=$(jq -r '.source.gcloud_workload_identity_enabled // "false"' < $payload)
   gcloud_project_name=$(jq -r '.source.gcloud_project_name // ""' < $payload)
   gcloud_k8s_cluster_name=$(jq -r '.source.gcloud_k8s_cluster_name // ""' < $payload)
   gcloud_k8s_zone=$(jq -r '.source.gcloud_k8s_zone // ""' < $payload)
@@ -85,15 +86,21 @@ setup_gcp_kubernetes() {
     exit 1
   fi
 
-  if [[ -f $gcloud_service_account_key_file ]]; then
-    echo "service acccount $gcloud_service_account_key_file is passed as a file"
-    gcloud_path="$gcloud_service_account_key_file"
+  if [ "$gcloud_workload_identity_enabled" == "false" ];
+    if [[ -f $gcloud_service_account_key_file ]]; then
+      echo "service acccount $gcloud_service_account_key_file is passed as a file"
+      gcloud_path="$gcloud_service_account_key_file"
+    else
+      echo "$gcloud_service_account_key_file" >> /gcloud.json
+      gcloud_path="/gcloud.json"
+    fi
+    
+    gcloud_service_account_name=($(cat $gcloud_path | jq -r ".client_email"))
+    gcloud auth activate-service-account ${gcloud_service_account_name} --key-file $gcloud_path
   else
-    echo "$gcloud_service_account_key_file" >> /gcloud.json
-    gcloud_path="/gcloud.json"
+      echo "Workload Identity is enabled - no need to authenticate with a private key"
   fi
-  gcloud_service_account_name=($(cat $gcloud_path | jq -r ".client_email"))
-  gcloud auth activate-service-account ${gcloud_service_account_name} --key-file $gcloud_path
+  
   gcloud config set account ${gcloud_service_account_name}
   gcloud config set project ${gcloud_project_name}
   gcloud container clusters get-credentials ${gcloud_k8s_cluster_name} --zone ${gcloud_k8s_zone}
