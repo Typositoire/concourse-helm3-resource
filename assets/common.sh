@@ -81,7 +81,7 @@ setup_gcp_kubernetes() {
   gcloud_k8s_cluster_name=$(jq -r '.source.gcloud_k8s_cluster_name // ""' < $payload)
   gcloud_k8s_zone=$(jq -r '.source.gcloud_k8s_zone // ""' < $payload)
 
-  if [ -z "$gcloud_service_account_key_file" ] || [ -z "$gcloud_project_name" ] || [ -z "$gcloud_k8s_cluster_name" ] || [ -z "$gcloud_k8s_zone" ]; then
+  if [ -z "$gcloud_project_name" ] || [ -z "$gcloud_k8s_cluster_name" ] || [ -z "$gcloud_k8s_zone" ]; then
     echo "invalid payload for gcloud auth, please pass all required params"
     exit 1
   fi
@@ -91,7 +91,7 @@ setup_gcp_kubernetes() {
       echo "invalid payload for gcloud auth, please pass all required params"
       exit 1
     fi
-    
+
     if [[ -f $gcloud_service_account_key_file ]]; then
       echo "service acccount $gcloud_service_account_key_file is passed as a file"
       gcloud_path="$gcloud_service_account_key_file"
