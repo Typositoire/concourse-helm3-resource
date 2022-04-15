@@ -81,12 +81,17 @@ setup_gcp_kubernetes() {
   gcloud_k8s_cluster_name=$(jq -r '.source.gcloud_k8s_cluster_name // ""' < $payload)
   gcloud_k8s_zone=$(jq -r '.source.gcloud_k8s_zone // ""' < $payload)
 
-  if [ -z "$gcloud_service_account_key_file" ] || [ -z "$gcloud_project_name" ] || [ -z "$gcloud_k8s_cluster_name" ] || [ -z "$gcloud_k8s_zone" ]; then
+  if [ -z "$gcloud_project_name" ] || [ -z "$gcloud_k8s_cluster_name" ] || [ -z "$gcloud_k8s_zone" ]; then
     echo "invalid payload for gcloud auth, please pass all required params"
     exit 1
   fi
 
   if [ "$gcloud_workload_identity_enabled" == "false" ]; then
+    if [ -z "$gcloud_service_account_key_file" ]; then
+      echo "invalid payload for gcloud auth, please pass all required params"
+      exit 1
+    fi
+
     if [[ -f $gcloud_service_account_key_file ]]; then
       echo "service acccount $gcloud_service_account_key_file is passed as a file"
       gcloud_path="$gcloud_service_account_key_file"
@@ -97,11 +102,11 @@ setup_gcp_kubernetes() {
     
     gcloud_service_account_name=($(cat $gcloud_path | jq -r ".client_email"))
     gcloud auth activate-service-account ${gcloud_service_account_name} --key-file $gcloud_path
+    gcloud config set account ${gcloud_service_account_name}
   else
       echo "Workload Identity is enabled - no need to authenticate with a private key"
   fi
   
-  gcloud config set account ${gcloud_service_account_name}
   gcloud config set project ${gcloud_project_name}
   gcloud container clusters get-credentials ${gcloud_k8s_cluster_name} --zone ${gcloud_k8s_zone}
 
