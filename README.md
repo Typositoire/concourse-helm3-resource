@@ -24,7 +24,7 @@ You can pull the resource image from [`typositoire/concourse-helm3-resource`][do
 
 ### DEPRECATION OF DOCKER HUB
 
-Starting with version 1.25.0, can you can no longer pull this resource from docker hub.
+Starting with version 1.25.0, can you can no longer pull this resource from Docker Hub.
 
 Starting with version 1.19.1, you can pull the resource from Github [`ghcr.io/typositoire/concourse-helm3-resource`][github packages]. Docker hub will eventually stop receiving new images.
 
