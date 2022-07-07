@@ -10,8 +10,10 @@ Heavily based on the work of [`linkyard/concourse-helm-resource`][linkyard].
 
 ## IMPORTANT NOTES
 
-- Version 1.21.0 to 1.24.2 seems to be broken for certain uses cases.
+- Version 1.21.0 to 1.24.2 seems to be broken for certain uses cases. See [Issue#83](https://github.com/Typositoire/concourse-helm3-resource/issues/83)
 - Version 1.21.0 to 1.24.2 seems to be missing helm diff plugin due to the use of HELM_PLUGINS environment variable
+  - HELM_PLUGINS was used as a build arg to store plugins list, which made the plugins be installed in a weird
+    place. Since this was a build arg only, installing the plugin again at run time worked.
 - Feel free to add to this list
 - Most of those have been fixed with v1.25.0 available in GHCR only
 
