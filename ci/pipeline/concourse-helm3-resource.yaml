@@ -45,14 +45,6 @@ resources:
       private_key: ((github.deploy_key))
       tag_filter: "v*.*.*"
 
-  - name: resource-image
-    type: registry-image
-    source:
-      repository: typositoire/concourse-helm3-resource
-      username: typositoire
-      password: ((dockerhub.typositoire))
-      tag: latest
-
   - name: resource-image-gh
     type: registry-image
     source:
