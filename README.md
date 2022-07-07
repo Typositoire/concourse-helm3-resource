@@ -8,12 +8,23 @@ Heavily based on the work of [`linkyard/concourse-helm-resource`][linkyard].
 
 [linkyard]: https://github.com/linkyard/concourse-helm-resource
 
+## IMPORTANT NOTES
+
+- Version 1.21.0 to 1.24.2 seems to be broken for certain uses cases. See [Issue#83](https://github.com/Typositoire/concourse-helm3-resource/issues/83)
+- Version 1.21.0 to 1.24.2 seems to be missing helm diff plugin due to the use of HELM_PLUGINS environment variable
+  - HELM_PLUGINS was used as a build arg to store plugins list, which made the plugins be installed in a weird
+    place. Since this was a build arg only, installing the plugin again at run time worked.
+- Feel free to add to this list
+- Most of those have been fixed with v1.25.0 available in GHCR only
+
 ## Docker Image
 You can pull the resource image from [`typositoire/concourse-helm3-resource`][dockerhub]. !["Dockerhub Pull Badge"](https://img.shields.io/docker/pulls/typositoire/concourse-helm3-resource.svg "Dockerhub Pull Badge")
 
 [dockerhub]: https://hub.docker.com/repository/docker/typositoire/concourse-helm3-resource
 
 ### DEPRECATION OF DOCKER HUB
+
+Starting with version 1.25.0, can you can no longer pull this resource from Docker Hub.
 
 Starting with version 1.19.1, you can pull the resource from Github [`ghcr.io/typositoire/concourse-helm3-resource`][github packages]. Docker hub will eventually stop receiving new images.
 
@@ -26,13 +37,14 @@ resource_types:
 - name: helm
   type: docker-image
   source:
-    repository: typositoire/concourse-helm3-resource
+    repository: ghcr.io/typositoire/concourse-helm3-resource
 ```
 
 ## Source Configuration
 
 -   `cluster_url`: _Optional._ URL to Kubernetes Master API service. Do not set when using the `kubeconfig_path` parameter, otherwise required.
--   `cluster_ca`: _Optional._ Cluster CA certificate PEM, optionally Base64 encoded. (Required if `insecure_cluster` == false)
+-   `cluster_ca`: _Optional._ Cluster CA certificate PEM. (Required if `insecure_cluster` == false)
+-   `cluster_ca_base64`: _Optional._ Cluster CA certificate PEM Base64 encoded. (Required if `insecure_cluster` == false)
 -   `insecure_cluster`: _Optional._ Skip TLS verification for cluster API. (Required if `cluster_ca` is nil)
 -   `token`: _Optional._ Bearer token for Kubernetes.  This, `token_path` or `admin_key`/`admin_cert` are required if `cluster_url` is https.
 -   `token_path`: _Optional._ Path to file containing the bearer token for Kubernetes.  This, 'token' or `admin_key`/`admin_cert` are required if `cluster_url` is https.

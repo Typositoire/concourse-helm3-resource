@@ -30,6 +30,7 @@ setup_kubernetes() {
     if [[ "$cluster_url" =~ https.* ]]; then
       insecure_cluster=$(jq -r '.source.insecure_cluster // "false"' < $payload)
       cluster_ca=$(jq -r '.source.cluster_ca // ""' < $payload)
+      cluster_ca_base64=$(jq -r '.source.cluster_ca_base64 // ""' < $payload)
       admin_key=$(jq -r '.source.admin_key // ""' < $payload)
       admin_cert=$(jq -r '.source.admin_cert // ""' < $payload)
       token=$(jq -r '.source.token // ""' < $payload)
@@ -39,10 +40,15 @@ setup_kubernetes() {
         kubectl config set-cluster default --server=$cluster_url --insecure-skip-tls-verify=true
       else
         ca_path="/root/.kube/ca.pem"
-        if ! echo "$cluster_ca" | base64 -d > $ca_path; then
-          echo "info: assuming unencoded cluster CA cert" >/dev/stderr
+        if [[ ! -z "$cluster_ca_base64" ]]; then
+          echo "$cluster_ca_base64" | base64 -d > $ca_path
+        elif [[ ! -z "$cluster_ca" ]]; then
           echo "$cluster_ca" > $ca_path
+        else
+          echo "missing cluster_ca or cluster_ca_base64"
+          exit 1
         fi
+        
         kubectl config set-cluster default --server=$cluster_url --certificate-authority=$ca_path
       fi
 
