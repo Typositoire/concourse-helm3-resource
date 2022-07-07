@@ -89,10 +89,6 @@ jobs:
               params:
                 image: image/image.tar
                 additional_tags: main-tags/.git/ref
-            - put: resource-image
-              params:
-                image: image/image.tar
-                additional_tags: main-tags/.git/ref
 
   - name: tag-main
     plan:

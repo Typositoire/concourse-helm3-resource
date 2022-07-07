@@ -5,7 +5,7 @@ LABEL maintainer "Yann David (@Typositoire) <davidyann88@gmail>"
 ARG KUBERNETES_VERSION=1.21.5
 ARG GCLOUD_VERSION=327.0.0
 ARG DOCTL_VERSION=1.57.0
-ARG HELM_PLUGINS="https://github.com/databus23/helm-diff"
+ARG HELM_PLUGINS_TO_INSTALL="https://github.com/databus23/helm-diff"
 
 #gcloud path
 ENV PATH $PATH:/usr/local/gcloud/google-cloud-sdk/bin
@@ -29,7 +29,7 @@ RUN mkdir -p /usr/local/gcloud \
 ADD assets /opt/resource
 
 #install plugins
-RUN for i in $(echo $HELM_PLUGINS | xargs -n1); do helm plugin install $i; done
+RUN for i in $(echo $HELM_PLUGINS_TO_INSTALL | xargs -n1); do helm plugin install $i; done
 
 #install kustomize
 RUN curl -s "https://raw.githubusercontent.com/kubernetes-sigs/kustomize/master/hack/install_kustomize.sh"  | bash && \
