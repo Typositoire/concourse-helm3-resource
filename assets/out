@@ -156,10 +156,6 @@ helm_upgrade() {
     if [ "$check_is_ready" == "true" ]; then
       upgrade_args+=("--wait")
     fi
-  fi 
-  
-  if [ "$wait_for_jobs" == "true" ]; then
-    upgrade_args+=("--wait-for-jobs")
   fi
 
   if [ "$atomic" == "true" ]; then
