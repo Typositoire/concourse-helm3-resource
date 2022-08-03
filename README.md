@@ -115,6 +115,7 @@ Deploy an helm chart
     charts (i.e. 1.0.2-rc1) without having to specify a version. (Default: false)
 -   `debug`: _Optional._ Dry run the helm install with the debug flag which logs interpolated chart templates. (Default: false)
 -   `check_is_ready`: _Optional._ Requires that `wait` is set to Default. Applies --wait without timeout. (Default: false)
+-   `wait_for_jobs`: _Optional._ Requires that `wait` is set to Default. Applies --wait and --wait-for-jobs without timeout. (Default: false)
 -   `atomic`: _Optional._ This flag will cause failed installs to purge the release, and failed upgrades to rollback to the previous release. (Default: false)
 -   `reuse_values`: _Optional._ When upgrading, reuse the last release's values. (Default: false)
 -   `reset_values`: _Optional._ When upgrading, reset the values to the ones built into the chart. (Default: false)

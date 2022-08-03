@@ -41,6 +41,7 @@ reuse_values=$(jq -r '.params.reuse_values // "false"' < $payload)
 reset_values=$(jq -r '.params.reset_values // "false"' < $payload)
 wait=$(jq -r '.params.wait // 0' < $payload)
 check_is_ready=$(jq -r '.params.check_is_ready // "false"' < $payload)
+wait_for_jobs=$(jq -r '.params.wait_for_jobs // "false"' < $payload)
 timeout=$(jq -r '.params.timeout // "5m0s"' < $payload)
 skip_missing_values=$(jq -r '.params.skip_missing_values // "false"' < $payload)
 
@@ -148,8 +149,11 @@ helm_upgrade() {
     upgrade_args+=("--create-namespace")
   fi
 
-  if [ "$check_is_ready" == "true" ]; then
+  if [ "$wait_for_jobs" == "true" ]; then
     upgrade_args+=("--wait")
+    upgrade_args+=("--wait-for-jobs")
+  elif [ "$check_is_ready" == "true" ]; then
+    upgrade_args+=("--wait")    
   fi
 
   if [ "$atomic" == "true" ]; then
