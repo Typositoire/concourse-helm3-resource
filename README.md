@@ -10,6 +10,7 @@ Heavily based on the work of [`linkyard/concourse-helm-resource`][linkyard].
 
 ## IMPORTANT NOTES
 
+- Version 1.25.0 expects `cluster_ca` in base64 format in a new parameter called `cluster_ca_base64`. `cluster_ca` can still be used if a plain certificate is passed.
 - Version 1.21.0 to 1.24.2 seems to be broken for certain uses cases. See [Issue#83](https://github.com/Typositoire/concourse-helm3-resource/issues/83)
 - Version 1.21.0 to 1.24.2 seems to be missing helm diff plugin due to the use of HELM_PLUGINS environment variable
   - HELM_PLUGINS was used as a build arg to store plugins list, which made the plugins be installed in a weird
