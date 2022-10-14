@@ -56,7 +56,7 @@ resource_types:
 -   `helm_history_max`: _Optional._ Limits the maximum number of revisions. (Default: 0 = no limit)
 -   `repos`: _Optional._ Array of Helm repositories to initialize, each repository is defined as an object with properties `name`, `url` (required) username and password (optional).
 -   `plugins`: _Optional._ Array of Helm plugins to install, each defined as an object with properties `url` (required), `version` (optional).
--   `stable_repo`: _Optional_ A `false` value will disable using a default Helm stable repo. Any other value will be used to Override default Helm stable repo URL <https://charts.helm.sh/stable>. Useful if running helm deploys without internet access.
+-   `stable_repo`: _Optional_ A `"false"` (must be "string" not boolean) value will disable using a default Helm stable repo. Any other value will be used to Override default Helm stable repo URL <https://charts.helm.sh/stable>. Useful if running helm deploys without internet access.
 -   `tracing_enabled`: _Optional._ Enable extremely verbose tracing for this resource. Useful when developing the resource itself. May allow secrets to be displayed. (Default: false)
 -   `helm_setup_purge_all`: _Optional._ Uninstalls and purge every helm release. Use with extreme caution. (Default: false)
 
