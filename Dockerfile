@@ -3,7 +3,7 @@ LABEL maintainer "Yann David (@Typositoire) <davidyann88@gmail>"
 
 #Versions for gcloud,kubectl,doctl
 ARG KUBERNETES_VERSION=1.21.5
-ARG GCLOUD_VERSION=327.0.0
+ARG GCLOUD_VERSION=416.0.0
 ARG DOCTL_VERSION=1.57.0
 ARG HELM_PLUGINS_TO_INSTALL="https://github.com/databus23/helm-diff"
 
