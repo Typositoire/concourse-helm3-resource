@@ -21,9 +21,17 @@ RUN curl -sL -o /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes
 RUN wget https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-${GCLOUD_VERSION}-linux-x86_64.tar.gz \
     -O /tmp/google-cloud-sdk.tar.gz | bash
 
+# For use with gke-gcloud-auth-plugin below
+# see https://cloud.google.com/blog/products/containers-kubernetes/kubectl-auth-changes-in-gke
+# for details
+ENV USE_GKE_GCLOUD_AUTH_PLUGIN=True
+
 RUN mkdir -p /usr/local/gcloud \
     && tar -C /usr/local/gcloud -xvzf /tmp/google-cloud-sdk.tar.gz \
-    && /usr/local/gcloud/google-cloud-sdk/install.sh -q
+    && /usr/local/gcloud/google-cloud-sdk/install.sh -q \
+    ## auth package is split out now, need explicit install
+    ## --quiet disables interactive prompts
+    && gcloud components install gke-gcloud-auth-plugin --quiet
 
 #copy scripts
 ADD assets /opt/resource
