@@ -35,9 +35,14 @@ setup_kubernetes() {
       admin_cert=$(jq -r '.source.admin_cert // ""' < $payload)
       token=$(jq -r '.source.token // ""' < $payload)
       token_path=$(jq -r '.params.token_path // ""' < $payload)
+      tls_server_name=$(jq -r '.source.tls_server_name // ""' < $payload)
+
+      if [[ ! -z "$tls_server_name" ]]; then
+          tls_server_name="--tls-server-name=$tls_server_name"
+      fi
 
       if [ "$insecure_cluster" == "true" ]; then
-        kubectl config set-cluster default --server=$cluster_url --insecure-skip-tls-verify=true
+        kubectl config set-cluster default --server=$cluster_url --insecure-skip-tls-verify=true $tls_server_name
       else
         ca_path="/root/.kube/ca.pem"
         if [[ ! -z "$cluster_ca_base64" ]]; then
@@ -49,7 +54,7 @@ setup_kubernetes() {
           exit 1
         fi
         
-        kubectl config set-cluster default --server=$cluster_url --certificate-authority=$ca_path
+        kubectl config set-cluster default --server=$cluster_url --certificate-authority=$ca_path $tls_server_name
       fi
 
       if [ -f "$source/$token_path" ]; then
