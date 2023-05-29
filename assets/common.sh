@@ -102,6 +102,7 @@ setup_aws_kubernetes() {
     exit 1
   fi
 
+  mkdir ~/.aws
   echo "[default]
   aws_access_key_id=$aws_access_key_id
   aws_secret_access_key=$aws_secret_access_key

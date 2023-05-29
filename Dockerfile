@@ -1,4 +1,4 @@
-FROM alpine/helm:3.10.2
+FROM --platform=linux/amd64 alpine/helm:3.10.2
 LABEL maintainer "Yann David (@Typositoire) <davidyann88@gmail>"
 
 # Versions for gcloud, kubectl, doctl, awscli
