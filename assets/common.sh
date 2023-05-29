@@ -82,6 +82,34 @@ setup_kubernetes() {
   kubectl version
 }
 
+setup_aws_kubernetes() {
+#  Need to pass in:
+#  source.aws_cluster_auth (bool)
+#  source.aws_access_key_id
+#  source.aws_secret_access_key
+#  source.aws_region
+#  source.aws_cluster_name
+  payload=$1
+  source=$2
+
+  aws_access_key_id=$(jq -r '.source.aws_access_key_id // ""' < $payload)
+  aws_secret_access_key=$(jq -r '.source.aws_secret_access_key // ""' < $payload)
+  aws_region=$(jq -r '.source.aws_region // ""' < $payload)
+  aws_cluster_name=$(jq -r '.source.aws_cluster_name // ""' < $payload)
+
+  if [ -z "$aws_access_key_id" ] || [ -z "$aws_secret_access_key" ] || [ -z "$aws_region" ] || [ -z "$aws_cluster_name" ]; then
+    echo "invalid payload for AWS EKS auth, please pass all required params"
+    exit 1
+  fi
+
+  echo "[default]
+  aws_access_key_id=$aws_access_key_id
+  aws_secret_access_key=$aws_secret_access_key
+  region=$aws_region" > ~/.aws/credentials
+
+  aws eks update-kubeconfig --region $aws_region --name $aws_cluster_name
+}
+
 setup_gcp_kubernetes() {
   payload=$1
   source=$2
@@ -217,6 +245,7 @@ setup_resource() {
   do_cluster_id=$(jq -r '.source.digitalocean.cluster_id // "false"' < $1)
   do_access_token=$(jq -r '.source.digitalocean.access_token // "false"' < $1)
   gcloud_cluster_auth=$(jq -r '.source.gcloud_cluster_auth // "false"' < $1)
+  aws_cluster_auth=$(jq -r '.source.aws_cluster_auth // "false"' < $1)
 
   if [ "$do_cluster_id" != "false" ] && [ "$do_access_token" != "false" ]; then
     echo "Initializing digitalocean..."
@@ -224,6 +253,9 @@ setup_resource() {
   elif [ "$gcloud_cluster_auth" = "true" ]; then
     echo "Initializing kubectl access using gcloud service account file"
     setup_gcp_kubernetes $1 $2
+  elif [ "$aws_cluster_auth" = "true" ]; then
+      echo "Initializing kubectl access using AWS credentials"
+      setup_aws_kubernetes $1 $2
   else
     echo "Initializing kubectl using certificates"
     setup_kubernetes $1 $2

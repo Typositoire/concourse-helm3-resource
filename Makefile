@@ -1,5 +1,5 @@
 PROJECT = concourse-helm3
-ID = YOUR_DOCKER_HOST_HERE/${PROJECT}
+ID = artielabs/${PROJECT}
 
 all: build push
 
