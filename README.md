@@ -180,6 +180,18 @@ resources:
         url: https://somerepo.github.io/charts
 ```
 
+Amazon EKS
+```yaml
+resources:
+- name: myapp-helm
+  type: helm
+  source:
+    aws_cluster_auth: true
+    aws_access_key_id: key
+    aws_secret_access_key: value
+    aws_region: aws-region
+    aws_cluster_name: eks-cluster-name
+```
 
 Add to job:
 
