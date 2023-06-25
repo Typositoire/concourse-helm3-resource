@@ -101,8 +101,8 @@ setup_aws_kubernetes() {
     echo "invalid payload for AWS EKS auth, please pass all required params"
     exit 1
   fi
-
-  mkdir ~/.aws
+  # -p so that it doesn't fail if folder already exists.
+  mkdir -p ~/.aws
   echo "[default]
   aws_access_key_id=$aws_access_key_id
   aws_secret_access_key=$aws_secret_access_key
