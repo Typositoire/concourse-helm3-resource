@@ -128,12 +128,22 @@ helm_upgrade() {
 
   if [ -n "$values" ]; then
     for value in $values; do
-      if [ "$skip_missing_values" == "true" ]; then
-        if [ -f "$source/$value" ]; then
+        if [[ "${values:0:8}" == 'secret://' ]]; then
+          # Leave the prefix "secret://" and append the path afterwards
+          suffix=${values:8}
+          filename="secret://$source/$suffix"
+          upgrade_args+=("-f" "$filename")
+          upgrade_diff_args+=("-f" "$filename")
+        elif [ -f "$source/$value" ]; then
           upgrade_args+=("-f" "$source/"$value)
           upgrade_diff_args+=("-f" "$source/"$value)
         else
-          echo "skipping missing values file $source/$value"
+          if [ "$skip_missing_values" == "true" ]; then
+            echo "skipping missing values file $source/$value"
+          else
+            echo "value file $source/$value not found"
+            exit 1
+          fi
         fi
       else
         upgrade_args+=("-f" "$source/"$value)
