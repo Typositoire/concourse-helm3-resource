@@ -96,7 +96,7 @@ Deploy an helm chart
 -   `namespace`: _Optional._ Either a file containing the name of the namespace or the name of the namespace. (Default: taken from source configuration).
 -   `create_namespace`: _Optional._ Create the namespace if it doesn't exist (Default: false).
 -   `release`: _Optional._ Either a file containing the name of the release or the name of the release. (Default: taken from source configuration).
--   `values`: _Optional._ File containing the values.yaml for the deployment. Supports setting multiple value files using an array.
+-   `values`: _Optional._ File containing the values.yaml for the deployment. Supports setting multiple value files using an array. Use secrets:// prefix for sops encrypted files (and set `age_key`).
 -   `override_values`: _Optional._ Array of values that can override those defined in values.yaml. Each entry in
     the array is a map containing a key and a value or path. Value is set directly while path reads the contents of
     the file in that path. A `hide: true` parameter ensures that the value is not logged and instead replaced with `***HIDDEN***`.
@@ -126,6 +126,7 @@ Deploy an helm chart
 -   `kubeconfig_path`: _Optional._ File containing a kubeconfig. Overrides source configuration for cluster, token, and admin config.
 -   `show_diff`: _Optional._ Show the diff that is applied if upgrading an existing successful release. (Default: false)
 -   `skip_missing_values:` _Optional._ Missing values files are skipped if they are specified in the values but do not exist. (Default false)
+-   `age_key`: _Optional._ The age private key to use for helm secret value decrypting (secret:// prefixed files).
 -   `env:` _Optional._ Key-value pairs (json object) to export in the environment. E.g. used to provide an age key to sops when using helm secret. (Default: none)
 
 ## Example

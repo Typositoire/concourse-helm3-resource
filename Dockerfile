@@ -1,17 +1,18 @@
-FROM alpine/helm:3.10.2
+FROM alpine/helm:3.12.3
 LABEL maintainer "Yann David (@Typositoire) <davidyann88@gmail>"
 
 #Versions for gcloud,kubectl,doctl
 ARG KUBERNETES_VERSION=1.21.5
 ARG GCLOUD_VERSION=416.0.0
 ARG DOCTL_VERSION=1.57.0
-ARG HELM_PLUGINS_TO_INSTALL="https://github.com/databus23/helm-diff"
+ARG HELM_PLUGINS_TO_INSTALL="https://github.com/databus23/helm-diff https://github.com/jkroepke/helm-secrets"
 
 #gcloud path
 ENV PATH $PATH:/usr/local/gcloud/google-cloud-sdk/bin
 
 #install packages
-RUN apk add --update --upgrade --no-cache jq bash curl git gettext libintl py-pip
+RUN apk add --update --upgrade --no-cache jq bash curl git gettext libintl py-pip age
+RUN apk add sops --repository=http://dl-cdn.alpinelinux.org/alpine/edge/testing/
 
 #install kubectl
 RUN curl -sL -o /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes-release/release/v${KUBERNETES_VERSION}/bin/linux/amd64/kubectl; \

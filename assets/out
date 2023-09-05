@@ -45,6 +45,7 @@ check_is_ready=$(jq -r '.params.check_is_ready // "false"' < $payload)
 wait_for_jobs=$(jq -r '.params.wait_for_jobs // "false"' < $payload)
 timeout=$(jq -r '.params.timeout // "5m0s"' < $payload)
 skip_missing_values=$(jq -r '.params.skip_missing_values // "false"' < $payload)
+age_key=$(jq -r '.params.age_key // ""' < $payload)
 
 if [[ "$test" == "false" ]] && [[ "$uninstall" == "false" ]] && [ -z "$chart" ] ; then
   echo "invalid payload (missing chart)"
@@ -85,6 +86,12 @@ if [[ "$chart" == *.tgz ]] || [[ -d "$source/$chart" ]]; then
 else
   # get from a repo
   chart_full="$chart"
+fi
+
+if [[ -f "$age_key" ]] then
+  export SOPS_AGE_KEY_FILE="$age_key"
+else
+  export SOPS_AGE_KEY="$age_key"
 fi
 
 set_overridden_values() {
@@ -128,10 +135,10 @@ helm_upgrade() {
 
   if [ -n "$values" ]; then
     for value in $values; do
-        if [[ "${values:0:8}" == 'secret://' ]]; then
-          # Leave the prefix "secret://" and append the path afterwards
-          suffix=${values:8}
-          filename="secret://$source/$suffix"
+        if [[ "${value:0:10}" == 'secrets://' ]]; then
+          # helm secrets files -> Leave the schema "secrets://" and append the path afterwards
+          suffix=${value:10}
+          filename="secrets://$source/$suffix"
           upgrade_args+=("-f" "$filename")
           upgrade_diff_args+=("-f" "$filename")
         elif [ -f "$source/$value" ]; then
