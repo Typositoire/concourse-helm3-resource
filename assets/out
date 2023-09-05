@@ -15,6 +15,7 @@ cat > $payload <&0
 
 # Prepare
 setup_resource $payload $source
+setup_env $payload
 setup_repos $payload $source 
 echo "Resource setup successful."
 

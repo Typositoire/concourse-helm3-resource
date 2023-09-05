@@ -126,6 +126,7 @@ Deploy an helm chart
 -   `kubeconfig_path`: _Optional._ File containing a kubeconfig. Overrides source configuration for cluster, token, and admin config.
 -   `show_diff`: _Optional._ Show the diff that is applied if upgrading an existing successful release. (Default: false)
 -   `skip_missing_values:` _Optional._ Missing values files are skipped if they are specified in the values but do not exist. (Default false)
+-   `env:` _Optional._ Key-value pairs (json object) to export in the environment. E.g. used to provide an age key to sops when using helm secret. (Default: none)
 
 ## Example
 
