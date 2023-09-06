@@ -135,26 +135,22 @@ helm_upgrade() {
 
   if [ -n "$values" ]; then
     for value in $values; do
-        if [[ "${value:0:10}" == 'secrets://' ]]; then
-          # helm secrets files -> Leave the schema "secrets://" and append the path afterwards
-          suffix=${value:10}
-          filename="secrets://$source/$suffix"
-          upgrade_args+=("-f" "$filename")
-          upgrade_diff_args+=("-f" "$filename")
-        elif [ -f "$source/$value" ]; then
-          upgrade_args+=("-f" "$source/"$value)
-          upgrade_diff_args+=("-f" "$source/"$value)
-        else
-          if [ "$skip_missing_values" == "true" ]; then
-            echo "skipping missing values file $source/$value"
-          else
-            echo "value file $source/$value not found"
-            exit 1
-          fi
-        fi
-      else
+      if [[ "${value:0:10}" == 'secrets://' ]]; then
+        # helm secrets files -> Leave the schema "secrets://" and append the path afterwards
+        suffix=${value:10}
+        filename="secrets://$source/$suffix"
+        upgrade_args+=("-f" "$filename")
+        upgrade_diff_args+=("-f" "$filename")
+      elif [ -f "$source/$value" ]; then
         upgrade_args+=("-f" "$source/"$value)
         upgrade_diff_args+=("-f" "$source/"$value)
+      else
+        if [ "$skip_missing_values" == "true" ]; then
+          echo "skipping missing values file $source/$value"
+        else
+          echo "value file $source/$value not found"
+          exit 1
+        fi
       fi
     done
   fi
