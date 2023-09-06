@@ -234,8 +234,8 @@ setup_resource() {
 }
 
 setup_env() {
-  keys=$(jq -r '.source.env | keys[]' < $1)
-  if [[ $? -ne 0 ]]; then
+  keys=$(jq -r 'if (.source.env // empty) == {} then empty else .source.env | keys[] end' < $1)
+  if [ -z "$keys" ]; then
     return 0
   fi
   for key in $keys; do
