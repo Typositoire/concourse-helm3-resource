@@ -235,12 +235,14 @@ setup_resource() {
 
 setup_env() {
   keys=$(jq -r '.source.env | keys[]' < $1)
-  if [[ $? -ne 0 ]]; then return 0 fi
+  if [[ $? -ne 0 ]]; then
+    return 0
+  fi
   for key in $keys; do
     value=$(jq -r ".source.env.${key}" < "$1")
     export $key="$value"
   done
-}
+  }
 
 setup_doctl() {
   doctl_token=$(jq -r '.source.digitalocean.access_token // ""' < $payload)
