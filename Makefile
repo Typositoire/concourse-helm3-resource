@@ -1,10 +1,10 @@
-PROJECT = concourse-helm3
-ID = YOUR_DOCKER_HOST_HERE/${PROJECT}
+PROJECT = devops/concourse-helm-3
+ID = registry.infra.yoti.com/${PROJECT}
 
 all: build push
 
 build:
-	docker build --tag ${ID}:release-candidate .
+	docker build --tag ${ID} .
 
 push:
 	docker push ${ID}

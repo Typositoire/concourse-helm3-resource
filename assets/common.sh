@@ -8,6 +8,7 @@ elif [ -n "$namespace_overwrite" ]; then
 fi
 
 setup_kubernetes() {
+
   payload=$1
   source=$2
 
@@ -65,12 +66,12 @@ setup_kubernetes() {
         mkdir -p /root/.kube
         key_path="/root/.kube/key.pem"
         cert_path="/root/.kube/cert.pem"
-        echo "$admin_key" | base64 -d > $key_path
-        echo "$admin_cert" | base64 -d > $cert_path
-        kubectl config set-credentials admin --client-certificate=$cert_path --client-key=$key_path
+        echo "$admin_key"  > $key_path
+        echo "$admin_cert" > $cert_path
+        kubectl config set-credentials dev --client-certificate=$cert_path --client-key=$key_path
       fi
 
-      kubectl config set-context default --cluster=default --user=admin
+      kubectl config set-context default --cluster=default --user=dev
     else
       kubectl config set-cluster default --server=$cluster_url
       kubectl config set-context default --cluster=default
@@ -79,7 +80,7 @@ setup_kubernetes() {
     kubectl config use-context default
   fi
 
-  kubectl version
+  kubectl version --client-certificate=$cert_path --client-key=$key_path
 }
 
 setup_gcp_kubernetes() {
