@@ -99,16 +99,14 @@ set_overridden_values() {
       if [ "$verbatim" != 'false' ]; then
         value="${value/\\/\\\\}"
       fi
-
-      scrubbed_value="$value"
-      if [ "$hidden" != 'false' ]; then
-        scrubbed_value='***HIDDEN***'
-      fi
-
       helm_set_opt='--set'
       if [ "$type" == 'string' ]; then
         helm_set_opt='--set-string'
       fi
+    fi
+    scrubbed_value="$value"
+    if [ "$hidden" != 'false' ]; then
+      scrubbed_value='***HIDDEN***'
     fi
 
     overridden_args+=("$helm_set_opt" "$key=$value")
