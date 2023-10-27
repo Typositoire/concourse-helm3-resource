@@ -203,4 +203,7 @@ jobs:
       - key: image.tag
         path: version/image_tag # Read value from version/number
         type: string            # Make sure it's interpreted as a string by Helm (not a number)
+      - key: configuration
+        path: configuration/production.yaml # add path to --set-file helm option 
+        type: file            # use --set-file helm option ( --set-file configuration=configuration/production.yaml )
 ```
