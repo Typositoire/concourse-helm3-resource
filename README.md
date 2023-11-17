@@ -1,3 +1,7 @@
+# IMPORTANT
+
+https://github.com/Typositoire/concourse-helm3-resource/issues/102
+
 # Helm Resource for Concourse
 
 ![CI Build](https://concourse.pubb-it.com/api/v1/teams/main/pipelines/concourse-helm3-resource/jobs/build-image-tag/badge)
