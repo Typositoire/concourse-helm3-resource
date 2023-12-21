@@ -54,5 +54,5 @@ fi
 
 # if we get here we couldnt find a revision to return so we bail - this is a good thing
 # since check should fail if its configuration cant point to a verifiable state.
-echo "Unable to confirm any revision for namspace: $namespace & release: $release" 
+echo "Unable to confirm any revision for namespace: $namespace & release: $release"
 exit 1

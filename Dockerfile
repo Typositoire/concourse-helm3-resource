@@ -1,10 +1,12 @@
-FROM alpine/helm:3.10.2
-LABEL maintainer "Yann David (@Typositoire) <davidyann88@gmail>"
+FROM --platform=linux/amd64 alpine/helm:3.10.2
+LABEL maintainer="Yann David (@Typositoire) <davidyann88@gmail>"
 
-#Versions for gcloud,kubectl,doctl
+# Versions for gcloud, kubectl, doctl, awscli
 ARG KUBERNETES_VERSION=1.21.5
 ARG GCLOUD_VERSION=416.0.0
 ARG DOCTL_VERSION=1.57.0
+# https://pypi.org/project/awscli/
+ARG AWSCLI_VERSION=1.31.10
 ARG HELM_PLUGINS_TO_INSTALL="https://github.com/databus23/helm-diff"
 
 #gcloud path
@@ -20,6 +22,9 @@ RUN curl -sL -o /usr/local/bin/kubectl https://storage.googleapis.com/kubernetes
 #install gcloud
 RUN wget https://dl.google.com/dl/cloudsdk/channels/rapid/downloads/google-cloud-sdk-${GCLOUD_VERSION}-linux-x86_64.tar.gz \
     -O /tmp/google-cloud-sdk.tar.gz | bash
+
+#install awscli
+RUN pip install awscli==${AWSCLI_VERSION}
 
 # For use with gke-gcloud-auth-plugin below
 # see https://cloud.google.com/blog/products/containers-kubernetes/kubectl-auth-changes-in-gke
