@@ -1,3 +1,7 @@
+# IMPORTANT
+
+https://github.com/Typositoire/concourse-helm3-resource/issues/102
+
 # Helm Resource for Concourse
 
 ![CI Build](https://concourse.pubb-it.com/api/v1/teams/main/pipelines/concourse-helm3-resource/jobs/build-image-tag/badge)
@@ -102,6 +106,7 @@ Deploy an helm chart
     the file in that path. A `hide: true` parameter ensures that the value is not logged and instead replaced with `***HIDDEN***`.
     A `type: string` parameter makes sure Helm always treats the value as a string (uses the `--set-string` option to Helm; useful if the value varies
     and may look like a number, eg. if it's a Git commit hash).
+    A `type: file` parameter makes Helm treats the `path` as file (uses the `--set-file` option to Helm). 
     A `verbatim: true` parameter escapes backslashes so the value is passed as-is to the Helm chart (useful for `((credentials))`).
     The default behaviour of backslashes in `--set` is to quote the next character so `val\ue` is treated as `value` by Helm.
 -   `token_path`: _Optional._ Path to file containing the bearer token for Kubernetes.  This, 'token' or `admin_key`/`admin_cert` are required if `cluster_url` is https.
@@ -214,4 +219,7 @@ jobs:
       - key: image.tag
         path: version/image_tag # Read value from version/number
         type: string            # Make sure it's interpreted as a string by Helm (not a number)
+      - key: configuration
+        path: configuration/production.yaml # add path to --set-file helm option 
+        type: file            # use --set-file helm option ( --set-file configuration=configuration/production.yaml )
 ```
