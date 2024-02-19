@@ -88,22 +88,25 @@ fi
 
 set_overridden_values() {
   while read -r -d '' key && read -r -d '' value && read -r -d '' path && read -r -d '' hidden && read -r -d '' type && read -r -d '' verbatim; do
-    if [ -n "$path" ]; then
-      value="$(< "$source/$path")"
-    fi
+    if [ "$type" == 'file' ]; then
+      helm_set_opt='--set-file'
+      value="$source/$path"
+    else
+      if [ -n "$path" ]; then
+        value="$(< "$source/$path")"
+      fi
 
-    if [ "$verbatim" != 'false' ]; then
-      value="${value/\\/\\\\}"
+      if [ "$verbatim" != 'false' ]; then
+        value="${value/\\/\\\\}"
+      fi
+      helm_set_opt='--set'
+      if [ "$type" == 'string' ]; then
+        helm_set_opt='--set-string'
+      fi
     fi
-
     scrubbed_value="$value"
     if [ "$hidden" != 'false' ]; then
       scrubbed_value='***HIDDEN***'
-    fi
-
-    helm_set_opt='--set'
-    if [ "$type" == 'string' ]; then
-      helm_set_opt='--set-string'
     fi
 
     overridden_args+=("$helm_set_opt" "$key=$value")
