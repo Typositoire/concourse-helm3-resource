@@ -2,6 +2,7 @@ FROM --platform=linux/amd64 alpine/helm:3.10.2
 LABEL maintainer="Yann David (@Typositoire) <davidyann88@gmail>"
 
 # Versions for gcloud, kubectl, doctl, awscli
+# K8 versions: https://kubernetes.io/releases/
 ARG KUBERNETES_VERSION=1.26.0
 ARG GCLOUD_VERSION=416.0.0
 ARG DOCTL_VERSION=1.57.0
