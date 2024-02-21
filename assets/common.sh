@@ -157,7 +157,7 @@ setup_helm() {
   # $2 is the name of the source directory
 
 
-  history_max=$(jq -r '.source.helm_history_max // "0"' < $1)
+  history_max=$(jq -r '.source.helm_history_max // "10"' < $1)
 
   helm_bin="helm"
 
