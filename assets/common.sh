@@ -92,23 +92,22 @@ setup_aws_kubernetes() {
   payload=$1
   source=$2
 
-  aws_access_key_id=$(jq -r '.source.aws_access_key_id // ""' < $payload)
-  aws_secret_access_key=$(jq -r '.source.aws_secret_access_key // ""' < $payload)
+  # aws_access_key_id=$(jq -r '.source.aws_access_key_id // ""' < $payload)
+  # aws_secret_access_key=$(jq -r '.source.aws_secret_access_key // ""' < $payload)
+  aws_role_arn=$(jq -r '.source.aws_role_arn // ""' < $payload)
   aws_region=$(jq -r '.source.aws_region // ""' < $payload)
   aws_cluster_name=$(jq -r '.source.aws_cluster_name // ""' < $payload)
 
-  if [ -z "$aws_access_key_id" ] || [ -z "$aws_secret_access_key" ] || [ -z "$aws_region" ] || [ -z "$aws_cluster_name" ]; then
+  if [ -z "$aws_role_arn" ] || [ -z "$aws_region" ] || [ -z "$aws_cluster_name" ]; then
     echo "invalid payload for AWS EKS auth, please pass all required params"
     exit 1
   fi
   # -p so that it doesn't fail if folder already exists.
   mkdir -p ~/.aws
   echo "[default]
-  aws_access_key_id=$aws_access_key_id
-  aws_secret_access_key=$aws_secret_access_key
   region=$aws_region" > ~/.aws/credentials
 
-  aws eks update-kubeconfig --region $aws_region --name $aws_cluster_name
+  aws eks update-kubeconfig --region $aws_region --name $aws_cluster_name --role-arn $aws_role_arn
 }
 
 setup_gcp_kubernetes() {
