@@ -191,11 +191,12 @@ resources:
 - name: myapp-helm
   type: helm
   source:
-    aws_cluster_auth: true
-    aws_access_key_id: key
-    aws_secret_access_key: value
-    aws_region: aws-region
-    aws_cluster_name: eks-cluster-name
+    aws:
+      region: aws-region
+      cluster_name: eks-cluster-name
+      role:
+        arn: arn:aws:iam::<aws_account_id>:role/<my_eks_role>
+        session_name: EKSAssumeRoleSession
 ```
 
 Add to job:

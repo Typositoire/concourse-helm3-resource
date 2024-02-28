@@ -85,8 +85,6 @@ setup_kubernetes() {
 setup_aws_kubernetes() {
 #  Need to pass in:
 #  source.aws_cluster_auth (bool)
-#  source.aws_access_key_id
-#  source.aws_secret_access_key
 #  source.aws_region
 #  source.aws_cluster_name
   payload=$1
@@ -94,20 +92,31 @@ setup_aws_kubernetes() {
 
   # aws_access_key_id=$(jq -r '.source.aws_access_key_id // ""' < $payload)
   # aws_secret_access_key=$(jq -r '.source.aws_secret_access_key // ""' < $payload)
-  aws_role_arn=$(jq -r '.source.aws_role_arn // ""' < $payload)
-  aws_region=$(jq -r '.source.aws_region // ""' < $payload)
-  aws_cluster_name=$(jq -r '.source.aws_cluster_name // ""' < $payload)
+  role_arn=$(jq -r '.source.aws.role.arn // ""' < $payload)
+  role_session_name=$(jq -r '.source.aws.role.session_name // ""' < $payload)
+  region=$(jq -r '.source.aws.region // ""' < $payload)
+  cluster_name=$(jq -r '.source.aws.cluster_name // ""' < $payload)
 
-  if [ -z "$aws_role_arn" ] || [ -z "$aws_region" ] || [ -z "$aws_cluster_name" ]; then
+  if [ -z "$role_arn" ] || [ -z "$region" ] || [ -z "$cluster_name" ]; then
     echo "invalid payload for AWS EKS auth, please pass all required params"
     exit 1
   fi
-  # -p so that it doesn't fail if folder already exists.
-  mkdir -p ~/.aws
-  echo "[default]
-  region=$aws_region" > ~/.aws/credentials
 
-  aws eks update-kubeconfig --region $aws_region --name $aws_cluster_name --role-arn $aws_role_arn
+  mkdir -p ~/.aws
+  # what if credentials exist?
+  echo "[default]
+  region=$region" > ~/.aws/credentials
+
+  # `aws eks update-kubeconfig --role-arn` only populates the `role-arn` to be used 
+  # for `get-token`, and the role specified is not used for the initial describe cluster action
+  # name-based discovery is limited to same account as whatever profile is being used.
+  # additional functionality added to assume the same specified role in order to discover the cluster
+  $(printf "env AWS_ACCESS_KEY_ID=%s AWS_SECRET_ACCESS_KEY=%s AWS_SESSION_TOKEN=%s" \
+  $(aws sts assume-role \
+  --role-arn ${role_arn} \
+  --role-session-name ${role_session_name:-EKSAssumeRoleSession} \
+  --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]" \
+  --output text)) aws eks update-kubeconfig --region ${region} --name ${cluster_name} --role-arn ${role_arn}
 }
 
 setup_gcp_kubernetes() {
@@ -245,7 +254,7 @@ setup_resource() {
   do_cluster_id=$(jq -r '.source.digitalocean.cluster_id // "false"' < $1)
   do_access_token=$(jq -r '.source.digitalocean.access_token // "false"' < $1)
   gcloud_cluster_auth=$(jq -r '.source.gcloud_cluster_auth // "false"' < $1)
-  aws_cluster_auth=$(jq -r '.source.aws_cluster_auth // "false"' < $1)
+  aws_cluster_auth=$(jq -r '.source|has("aws")' < $1)
 
   if [ "$do_cluster_id" != "false" ] && [ "$do_access_token" != "false" ]; then
     echo "Initializing digitalocean..."
