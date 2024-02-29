@@ -202,7 +202,7 @@ resources:
         url: https://somerepo.github.io/charts
 ```
 
-Amazon EKS
+Amazon EKS using IAM role
 ```yaml
 resources:
 - name: myapp-helm
@@ -214,6 +214,21 @@ resources:
       role:
         arn: arn:aws:iam::<aws_account_id>:role/<my_eks_role>
         session_name: EKSAssumeRoleSession
+```
+
+Amazon EKS using user
+```yaml
+resources:
+- name: myapp-helm
+  type: helm
+  source:
+    aws:
+      region: aws-region
+      cluster_name: eks-cluster-name
+      profile: eks_user
+      user:
+        access_key_id: <access_key_id>
+        secret_access_key: <secret_access_key>
 ```
 
 Add to job:
@@ -240,9 +255,10 @@ jobs:
       - key: configuration
         path: configuration/production.yaml # add path to --set-file helm option 
         type: file            # use --set-file helm option ( --set-file configuration=configuration/production.yaml )
+  # ...
 ```
 
-Deploying charts from ECR private `helm` registry:
+Deploying charts from ECR private `helm` registry using IAM role auth
 
 ```yaml
 jobs:
@@ -258,15 +274,36 @@ jobs:
             arn: "arn:aws:iam::09876543210:role/ecr_read_only"
       # region and account_id of the OCI url need to match the configuration in private_registry.ecr
       chart: oci://01234567890.dkr.ecr.us-west-2.amazonaws.com/myapp-helm-repo
+      version: 1.2.3-myapp-helm-version
       namespace: myapp
       # limitation: concourse uses EKS deploy role, which does not have permission to create namespace on EKS.
       # for services, namespaces need to be created by service-lifecycle
       # for addons, namespeces are created by terraform from infra repo
       create_namespace: false
       release: myapp
-      version: 1.2.3-myapp-helm-version
       values: source-repo/values.yaml
       override_values:
       - key: image.tag
         value: oldest
+  # ...
+```
+
+Deploying charts from ECR private `helm` registry using user auth
+```yaml
+jobs:
+  # ...
+  plan:
+  - put: myapp-helm
+    params:
+      private_registry:
+        ecr:
+          region: us-west-2
+          account_id: "01234567890"
+          profile: ecr_user
+          user:
+            access_key_id: <access_key_id>
+            secret_access_key: <secret_access_key>
+      # region and account_id of the OCI url need to match the configuration in private_registry.ecr
+      chart: oci://01234567890.dkr.ecr.us-west-2.amazonaws.com/myapp-helm-repo
+  # ...
 ```
