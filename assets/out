@@ -92,27 +92,68 @@ helm_registry_login() {
   if [ "${ecr}" = true ]; then
     region=$(jq -r '.params.private_registry.ecr.region // ""' < $payload)
     account_id=$(jq -r '.params.private_registry.ecr.account_id // ""' < $payload)
-    role_arn=$(jq -r '.params.private_registry.ecr.role.arn // ""' < $payload)
-    role_session_name=$(jq -r '.params.private_registry.ecr.role.session_name // ""' < $payload)
-    
-    echo "authenticating with ECR. region=${region} account_id=${account_id} role_arn=${role_arn} role_session_name=${role_session_name}"
+    # only relevant to non-role based auth
+    # no default value in order to support instance profile
+    profile=$(jq -r '.params.private_registry.ecr.profile // ""' < $payload)
+    profile_opt=""
+    if [ -n "$profile" ]; then
+      profile_opt="--profile ${profile}"
+    fi
+
+    echo "authenticating with ECR. region=${region} account_id=${account_id}"
     if [ -z "$region" ] || [ -z "$account_id" ]; then
-      echo "invalid role"
+      echo "invalid payload for AWS ECR, please pass all required params"
       exit 1
     fi
 
-    if [ -z "$role_arn" ]; then
-      echo "no role arn specified. Fallback to use instance profile to authenticate with ECR"
-      aws ecr get-login-password --region ${region} | helm registry login --username AWS --password-stdin ${aws_account_id}.dkr.ecr.${region}.amazonaws.com
-    else
-      echo "role arn specified. Proceed with assume-role to authenticate with ECR. role_arn=${role_arn}"
+    use_role_base_auth=$(jq -r '.params.private_registry.ecr|has("role")' < $payload)
+    use_user_base_auth=$(jq -r '.params.private_registry.ecr|has("user")' < $payload)
+
+    if [ "${use_role_base_auth}" = true ]; then
+      echo "use role to authenticate with ECR."
+      role_arn=$(jq -r '.params.private_registry.ecr.role.arn // ""' < $payload)
+      role_session_name=$(jq -r '.params.private_registry.ecr.role.session_name // ""' < $payload)
+      echo "role_arn=${role_arn} role_session_name=${role_session_name}"
+
+      if [ -z "${role_arn}" ]; then
+        echo "invalid role arn for AWS EKS"
+        exit 1
+      fi
+
       $(printf "env AWS_ACCESS_KEY_ID=%s AWS_SECRET_ACCESS_KEY=%s AWS_SESSION_TOKEN=%s" \
       $(aws sts assume-role \
       --role-arn ${role_arn} \
       --role-session-name ${role_session_name:-ECRAssumeRoleSession} \
       --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]" \
       --output text)) aws ecr get-login-password --region ${region} | helm registry login --username AWS --password-stdin ${account_id}.dkr.ecr.${region}.amazonaws.com
+      # assumed role credentail will **NOT** be persisted on the disk
+    elif [ "${use_user_base_auth}" = true ]; then
+      echo "use user credentials to authenticate with ECR."
+
+      access_key_id=$(jq -r '.params.private_registry.ecr.user.access_key_id // ""' < $payload)
+      secret_access_key=$(jq -r '.params.private_registry.ecr.user.secret_access_key // ""' < $payload)
+
+      if [ -z "$access_key_id" ] || [ -z "$secret_access_key" ]; then
+        echo "invalid user auth payload for AWS EKS, please pass all required params"
+        exit 1
+      fi
+
+      # user credentail will be persisted on the disk under a specific profile
+      mkdir -p ~/.aws
+      echo "[${profile:-default}]
+      aws_access_key_id=${access_key_id}
+      aws_secret_access_key=${secret_access_key}
+      region=${region}" > ~/.aws/credentials
+
+      aws ecr get-login-password --region ${region} ${profile_opt} | helm registry login --username AWS --password-stdin ${account_id}.dkr.ecr.${region}.amazonaws.com
+    else
+      # defaults to use instance identity.
+      echo "no role or user specified. Fallback to use identity of the instance e.g. instance profile) to authenticate with ECR"
+      aws ecr get-login-password --region ${region} ${profile_opt} | helm registry login --username AWS --password-stdin ${account_id}.dkr.ecr.${region}.amazonaws.com
     fi
+
+
+      
   else
     # implement support for other helm registry following a similar pattern
     echo "unsupported private reigistry configuration"
