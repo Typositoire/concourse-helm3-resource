@@ -96,6 +96,10 @@ Deploy an helm chart
 
 #### Parameters
 
+-   `private_registry.ecr.region`: _Optional._ Region of ECR `helm` registry.
+-   `private_registry.ecr.account_id`: _Optional._ AWS account id of ECR `helm` registry.
+-   `private_registry.ecr.role.arn`: _Optional._ AWS IAM role ARN to be used to authenticate with ECR `helm` registry.
+-   `private_registry.ecr.role.session_name`: _Optional._ AWS assume role session name for authenticating with ECR `helm` registry.
 -   `chart`: _Required._ Either the file containing the helm chart to deploy (ends with .tgz), the path to a local directory containing the chart or the name of the chart from a repo (e.g. `stable/mysql`).
 -   `namespace`: _Optional._ Either a file containing the name of the namespace or the name of the namespace. (Default: taken from source configuration).
 -   `create_namespace`: _Optional._ Create the namespace if it doesn't exist (Default: false).
@@ -223,4 +227,33 @@ jobs:
       - key: configuration
         path: configuration/production.yaml # add path to --set-file helm option 
         type: file            # use --set-file helm option ( --set-file configuration=configuration/production.yaml )
+```
+
+Deploying charts from ECR private `helm` registry:
+
+```yaml
+jobs:
+  # ...
+  plan:
+  - put: myapp-helm
+    params:
+      private_registry:
+        ecr:
+          region: us-west-2
+          account_id: "01234567890"
+          role:
+            arn: "arn:aws:iam::09876543210:role/ecr_read_only"
+      # region and account_id of the OCI url need to match the configuration in private_registry.ecr
+      chart: oci://01234567890.dkr.ecr.us-west-2.amazonaws.com/myapp-helm-repo
+      namespace: myapp
+      # limitation: concourse uses EKS deploy role, which does not have permission to create namespace on EKS.
+      # for services, namespaces need to be created by service-lifecycle
+      # for addons, namespeces are created by terraform from infra repo
+      create_namespace: false
+      release: myapp
+      version: 1.2.3-myapp-helm-version
+      values: source-repo/values.yaml
+      override_values:
+      - key: image.tag
+        value: oldest
 ```
