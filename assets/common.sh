@@ -84,31 +84,81 @@ setup_kubernetes() {
 
 setup_aws_kubernetes() {
 #  Need to pass in:
-#  source.aws_cluster_auth (bool)
-#  source.aws_access_key_id
-#  source.aws_secret_access_key
-#  source.aws_region
-#  source.aws_cluster_name
+#  source.aws.region
+#  source.aws.cluster_name
+#  source.role **or** source.user
   payload=$1
   source=$2
 
-  aws_access_key_id=$(jq -r '.source.aws_access_key_id // ""' < $payload)
-  aws_secret_access_key=$(jq -r '.source.aws_secret_access_key // ""' < $payload)
-  aws_region=$(jq -r '.source.aws_region // ""' < $payload)
-  aws_cluster_name=$(jq -r '.source.aws_cluster_name // ""' < $payload)
+  region=$(jq -r '.source.aws.region // ""' < $payload)
+  cluster_name=$(jq -r '.source.aws.cluster_name // ""' < $payload)
+  
+  # only relevant to non-role based auth
+  # no default value in order to support instance profile
+  profile=$(jq -r '.source.aws.profile // ""' < $payload)
+  profile_opt=""
+  if [ -n "$profile" ]; then
+    profile_opt="--profile ${profile}"
+  fi
 
-  if [ -z "$aws_access_key_id" ] || [ -z "$aws_secret_access_key" ] || [ -z "$aws_region" ] || [ -z "$aws_cluster_name" ]; then
-    echo "invalid payload for AWS EKS auth, please pass all required params"
+  if [ -z "$region" ] || [ -z "$cluster_name" ]; then
+    echo "invalid payload for AWS EKS, please pass all required params"
     exit 1
   fi
-  # -p so that it doesn't fail if folder already exists.
-  mkdir -p ~/.aws
-  echo "[default]
-  aws_access_key_id=$aws_access_key_id
-  aws_secret_access_key=$aws_secret_access_key
-  region=$aws_region" > ~/.aws/credentials
 
-  aws eks update-kubeconfig --region $aws_region --name $aws_cluster_name
+  use_role_base_auth=$(jq -r '.source.aws|has("role")' < $payload)
+  use_user_base_auth=$(jq -r '.source.aws|has("user")' < $payload)
+
+  if [ "${use_role_base_auth}" = true ]; then
+    # prioritize role based auth if both are specified.
+    echo "proceed with assume-role to set up kubeconfig."
+    role_arn=$(jq -r '.source.aws.role.arn // ""' < $payload)
+    role_session_name=$(jq -r '.source.aws.role.session_name // ""' < $payload)
+
+    echo "role_arn=${role_arn} role_session_name=${role_session_name}"
+    if [ -z "${role_arn}" ]; then
+      echo "invalid role arn for AWS EKS"
+      exit 1
+    fi
+    # `aws eks update-kubeconfig --role-arn` only populates the `role-arn` to be used 
+    # for `get-token`, and the role specified is not used for the initial describe cluster action
+    # name-based discovery is limited to same account as whatever profile is being used.
+    # additional functionality added to assume the same specified role in order to discover the cluster
+    $(printf "env AWS_ACCESS_KEY_ID=%s AWS_SECRET_ACCESS_KEY=%s AWS_SESSION_TOKEN=%s" \
+    $(aws sts assume-role \
+    --role-arn ${role_arn} \
+    --role-session-name ${role_session_name:-EKSAssumeRoleSession} \
+    --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]" \
+    --output text)) aws eks update-kubeconfig --region ${region} --name ${cluster_name} --role-arn ${role_arn}
+
+    # assumed role credentail will **NOT** be persisted on the disk
+  elif [ "${use_user_base_auth}" = true ]; then
+    echo "proceed with user credentials to set up kubeconfig."
+
+    access_key_id=$(jq -r '.source.aws.user.access_key_id // ""' < $payload)
+    secret_access_key=$(jq -r '.source.aws.user.secret_access_key // ""' < $payload)
+
+    if [ -z "$access_key_id" ] || [ -z "$secret_access_key" ]; then
+      echo "invalid user auth payload for AWS EKS, please pass all required params"
+      exit 1
+    fi
+
+    # user credentail will be persisted on the disk under a specific profile
+    # in order to call `aws eks get-token`
+    mkdir -p ~/.aws
+    echo "[${profile:-default}]
+    aws_access_key_id=${access_key_id}
+    aws_secret_access_key=${secret_access_key}
+    region=${region}" > ~/.aws/credentials
+
+    aws eks update-kubeconfig --region ${region} --name ${cluster_name} ${profile_opt}
+  else
+    # defaults to use instance identity.
+    echo "no role or user specified. Fallback to use identity of the instance e.g. instance profile) to set up kubeconfig"
+    
+    aws eks update-kubeconfig --region ${region} --name ${cluster_name} ${profile_opt}
+  fi
+  echo "done setting up kubeconfig for EKS"
 }
 
 setup_gcp_kubernetes() {
@@ -246,7 +296,7 @@ setup_resource() {
   do_cluster_id=$(jq -r '.source.digitalocean.cluster_id // "false"' < $1)
   do_access_token=$(jq -r '.source.digitalocean.access_token // "false"' < $1)
   gcloud_cluster_auth=$(jq -r '.source.gcloud_cluster_auth // "false"' < $1)
-  aws_cluster_auth=$(jq -r '.source.aws_cluster_auth // "false"' < $1)
+  aws_cluster_auth=$(jq -r '.source|has("aws")' < $1)
 
   if [ "$do_cluster_id" != "false" ] && [ "$do_access_token" != "false" ]; then
     echo "Initializing digitalocean..."

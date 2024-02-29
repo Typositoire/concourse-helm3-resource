@@ -84,6 +84,16 @@ resource_types:
 -   `digitalocean.cluster_id` _Optional._ ClusterID on digitalocean to fetch kubeconfig.
 -   `digitalocean.access_token` _Optionl._ Read Access Token to fetch kubeconfig.
 
+## Source options for AWS EKS
+
+-   `aws.region` _Optional._ Region of the EKS cluster
+-   `aws.cluster_name` _Optionl._ Name of the EKS cluster
+-   `aws.profile` _Optional._ Name of the AWS profile to store/use credentials, defaults to `default`. Only used for non-role based authentication
+-   `aws.role.arn` _Optional._ ARN of the role to be used for EKS authentication
+-   `aws.role.session_name` _Optional._ Session name of the assume-role session
+-   `aws.user.access_key_id` _Optional._ Access key id of the user credential used for EKS authentication
+-   `aws.user.secret_access_key` _Optional._ Secret access key of the user credential used for EKS authentication
+
 ## Behavior
 
 ### `check`: Check the release, not happy with dynamic releases.
@@ -96,6 +106,13 @@ Deploy an helm chart
 
 #### Parameters
 
+-   `private_registry.ecr.region`: _Optional._ Region of ECR `helm` registry.
+-   `private_registry.ecr.account_id`: _Optional._ AWS account id of ECR `helm` registry.
+-   `private_registry.ecr.profile` _Optional._ Name of the AWS profile to store/use credentials, defaults to `default`. Only used for non-role based authentication.
+-   `private_registry.ecr.role.arn`: _Optional._ AWS IAM role ARN to be used to authenticate with ECR `helm` registry.
+-   `private_registry.ecr.role.session_name`: _Optional._ AWS assume role session name for authenticating with ECR `helm` registry.
+-   `private_registry.ecr.user.access_key_id` _Optional._ Access key id of the user credential used for ECR `helm` registry authentication
+-   `private_registry.ecr.user.secret_access_key` _Optional._ Secret access key of the user credential used for ECR `helm` registry authentication
 -   `chart`: _Required._ Either the file containing the helm chart to deploy (ends with .tgz), the path to a local directory containing the chart or the name of the chart from a repo (e.g. `stable/mysql`).
 -   `namespace`: _Optional._ Either a file containing the name of the namespace or the name of the namespace. (Default: taken from source configuration).
 -   `create_namespace`: _Optional._ Create the namespace if it doesn't exist (Default: false).
@@ -185,17 +202,33 @@ resources:
         url: https://somerepo.github.io/charts
 ```
 
-Amazon EKS
+Amazon EKS using IAM role
 ```yaml
 resources:
 - name: myapp-helm
   type: helm
   source:
-    aws_cluster_auth: true
-    aws_access_key_id: key
-    aws_secret_access_key: value
-    aws_region: aws-region
-    aws_cluster_name: eks-cluster-name
+    aws:
+      region: aws-region
+      cluster_name: eks-cluster-name
+      role:
+        arn: arn:aws:iam::<aws_account_id>:role/<my_eks_role>
+        session_name: EKSAssumeRoleSession
+```
+
+Amazon EKS using user
+```yaml
+resources:
+- name: myapp-helm
+  type: helm
+  source:
+    aws:
+      region: aws-region
+      cluster_name: eks-cluster-name
+      profile: eks_user
+      user:
+        access_key_id: <access_key_id>
+        secret_access_key: <secret_access_key>
 ```
 
 Add to job:
@@ -222,4 +255,55 @@ jobs:
       - key: configuration
         path: configuration/production.yaml # add path to --set-file helm option 
         type: file            # use --set-file helm option ( --set-file configuration=configuration/production.yaml )
+  # ...
+```
+
+Deploying charts from ECR private `helm` registry using IAM role auth
+
+```yaml
+jobs:
+  # ...
+  plan:
+  - put: myapp-helm
+    params:
+      private_registry:
+        ecr:
+          region: us-west-2
+          account_id: "01234567890"
+          role:
+            arn: "arn:aws:iam::09876543210:role/ecr_read_only"
+      # region and account_id of the OCI url need to match the configuration in private_registry.ecr
+      chart: oci://01234567890.dkr.ecr.us-west-2.amazonaws.com/myapp-helm-repo
+      version: 1.2.3-myapp-helm-version
+      namespace: myapp
+      # limitation: concourse uses EKS deploy role, which does not have permission to create namespace on EKS.
+      # for services, namespaces need to be created by service-lifecycle
+      # for addons, namespeces are created by terraform from infra repo
+      create_namespace: false
+      release: myapp
+      values: source-repo/values.yaml
+      override_values:
+      - key: image.tag
+        value: oldest
+  # ...
+```
+
+Deploying charts from ECR private `helm` registry using user auth
+```yaml
+jobs:
+  # ...
+  plan:
+  - put: myapp-helm
+    params:
+      private_registry:
+        ecr:
+          region: us-west-2
+          account_id: "01234567890"
+          profile: ecr_user
+          user:
+            access_key_id: <access_key_id>
+            secret_access_key: <secret_access_key>
+      # region and account_id of the OCI url need to match the configuration in private_registry.ecr
+      chart: oci://01234567890.dkr.ecr.us-west-2.amazonaws.com/myapp-helm-repo
+  # ...
 ```
