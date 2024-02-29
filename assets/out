@@ -88,7 +88,6 @@ else
 fi
 
 helm_registry_login() {
-  # todo:
   ecr=$(jq -r '.params.private_registry|has("ecr")' < $payload)
   if [ "${ecr}" = true ]; then
     region=$(jq -r '.params.private_registry.ecr.region // ""' < $payload)
@@ -103,7 +102,7 @@ helm_registry_login() {
     fi
 
     if [ -z "$role_arn" ]; then
-      echo "no role arn specified. Fall back to use instance profile to authenticate with ECR"
+      echo "no role arn specified. Fallback to use instance profile to authenticate with ECR"
       aws ecr get-login-password --region ${region} | helm registry login --username AWS --password-stdin ${aws_account_id}.dkr.ecr.${region}.amazonaws.com
     else
       echo "role arn specified. Proceed with assume-role to authenticate with ECR. role_arn=${role_arn}"
@@ -115,7 +114,7 @@ helm_registry_login() {
       --output text)) aws ecr get-login-password --region ${region} | helm registry login --username AWS --password-stdin ${account_id}.dkr.ecr.${region}.amazonaws.com
     fi
   else
-    # todo: implement support for other helm registry
+    # implement support for other helm registry following a similar pattern
     echo "unsupported private reigistry configuration"
     exit 1
   fi

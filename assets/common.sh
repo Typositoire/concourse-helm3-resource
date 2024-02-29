@@ -103,12 +103,11 @@ setup_aws_kubernetes() {
   fi
 
   mkdir -p ~/.aws
-  # what if credentials exist?
   echo "[default]
   region=$region" > ~/.aws/credentials
 
   if [ -z "$role_arn" ]; then
-    echo "no role arn specified. Fall back to use instance profile to set up kubeconfig"
+    echo "no role arn specified. Fallback to use instance profile to set up kubeconfig"
     aws eks update-kubeconfig --region ${region} --name ${cluster_name}
   else
     echo "role arn specified. Proceed with assume-role to set up kubeconfig. role_arn=${role_arn}"
