@@ -151,9 +151,7 @@ helm_registry_login() {
       echo "no role or user specified. Fallback to use identity of the instance e.g. instance profile) to authenticate with ECR"
       aws ecr get-login-password --region ${region} ${profile_opt} | helm registry login --username AWS --password-stdin ${account_id}.dkr.ecr.${region}.amazonaws.com
     fi
-
-
-      
+    echo "done logging in to ECR"
   else
     # implement support for other helm registry following a similar pattern
     echo "unsupported private reigistry configuration"
