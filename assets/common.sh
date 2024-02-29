@@ -97,7 +97,7 @@ setup_aws_kubernetes() {
   region=$(jq -r '.source.aws.region // ""' < $payload)
   cluster_name=$(jq -r '.source.aws.cluster_name // ""' < $payload)
 
-  if [ -z "$role_arn" ] || [ -z "$region" ] || [ -z "$cluster_name" ]; then
+  if [ -z "$region" ] || [ -z "$cluster_name" ]; then
     echo "invalid payload for AWS EKS auth, please pass all required params"
     exit 1
   fi
@@ -107,16 +107,22 @@ setup_aws_kubernetes() {
   echo "[default]
   region=$region" > ~/.aws/credentials
 
-  # `aws eks update-kubeconfig --role-arn` only populates the `role-arn` to be used 
-  # for `get-token`, and the role specified is not used for the initial describe cluster action
-  # name-based discovery is limited to same account as whatever profile is being used.
-  # additional functionality added to assume the same specified role in order to discover the cluster
-  $(printf "env AWS_ACCESS_KEY_ID=%s AWS_SECRET_ACCESS_KEY=%s AWS_SESSION_TOKEN=%s" \
-  $(aws sts assume-role \
-  --role-arn ${role_arn} \
-  --role-session-name ${role_session_name:-EKSAssumeRoleSession} \
-  --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]" \
-  --output text)) aws eks update-kubeconfig --region ${region} --name ${cluster_name} --role-arn ${role_arn}
+  if [ -z "$role_arn" ]; then
+    echo "no role arn specified. Fall back to use instance profile to set up kubeconfig"
+    aws eks update-kubeconfig --region ${region} --name ${cluster_name}
+  else
+    echo "role arn specified. Proceed with assume-role to set up kubeconfig. role_arn=${role_arn}"
+    # `aws eks update-kubeconfig --role-arn` only populates the `role-arn` to be used 
+    # for `get-token`, and the role specified is not used for the initial describe cluster action
+    # name-based discovery is limited to same account as whatever profile is being used.
+    # additional functionality added to assume the same specified role in order to discover the cluster
+    $(printf "env AWS_ACCESS_KEY_ID=%s AWS_SECRET_ACCESS_KEY=%s AWS_SESSION_TOKEN=%s" \
+    $(aws sts assume-role \
+    --role-arn ${role_arn} \
+    --role-session-name ${role_session_name:-EKSAssumeRoleSession} \
+    --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]" \
+    --output text)) aws eks update-kubeconfig --region ${region} --name ${cluster_name} --role-arn ${role_arn}
+  fi
 }
 
 setup_gcp_kubernetes() {

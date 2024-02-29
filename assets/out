@@ -18,6 +18,7 @@ setup_resource $payload $source
 setup_repos $payload $source 
 echo "Resource setup successful."
 
+private_registry=$(jq -r '.params|has("private_registry")' < $payload)
 namespace=$(jq -r '.source.namespace // "default"' < $payload)
 release=$(jq -r '.source.release // ""' < $payload)
 chart=$(jq -r '.params.chart // ""' < $payload)
@@ -85,6 +86,40 @@ else
   # get from a repo
   chart_full="$chart"
 fi
+
+helm_registry_login() {
+  # todo:
+  ecr=$(jq -r '.params.private_registry|has("ecr")' < $payload)
+  if [ "${ecr}" = true ]; then
+    region=$(jq -r '.params.private_registry.ecr.region // ""' < $payload)
+    account_id=$(jq -r '.params.private_registry.ecr.account_id // ""' < $payload)
+    role_arn=$(jq -r '.params.private_registry.ecr.role.arn // ""' < $payload)
+    role_session_name=$(jq -r '.params.private_registry.ecr.role.session_name // ""' < $payload)
+    
+    echo "authenticating with ECR. region=${region} account_id=${account_id} role_arn=${role_arn} role_session_name=${role_session_name}"
+    if [ -z "$region" ] || [ -z "$account_id" ]; then
+      echo "invalid role"
+      exit 1
+    fi
+
+    if [ -z "$role_arn" ]; then
+      echo "no role arn specified. Fall back to use instance profile to authenticate with ECR"
+      aws ecr get-login-password --region ${region} | helm registry login --username AWS --password-stdin ${aws_account_id}.dkr.ecr.${region}.amazonaws.com
+    else
+      echo "role arn specified. Proceed with assume-role to authenticate with ECR. role_arn=${role_arn}"
+      $(printf "env AWS_ACCESS_KEY_ID=%s AWS_SECRET_ACCESS_KEY=%s AWS_SESSION_TOKEN=%s" \
+      $(aws sts assume-role \
+      --role-arn ${role_arn} \
+      --role-session-name ${role_session_name:-ECRAssumeRoleSession} \
+      --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]" \
+      --output text)) aws ecr get-login-password --region ${region} | helm registry login --username AWS --password-stdin ${account_id}.dkr.ecr.${region}.amazonaws.com
+    fi
+  else
+    # todo: implement support for other helm registry
+    echo "unsupported private reigistry configuration"
+    exit 1
+  fi
+}
 
 set_overridden_values() {
   while read -r -d '' key && read -r -d '' value && read -r -d '' path && read -r -d '' hidden && read -r -d '' type && read -r -d '' verbatim; do
@@ -284,6 +319,12 @@ helm_test() {
   echo "Running command helm ${test_args[@]} | tee $logfile"
   $helm_bin ${test_args[@]} | tee $logfile
 }
+
+# support private registry
+if [ "${private_registry}" = true ]; then
+  echo "private registry configured. proceeding with helm registry login"
+  helm_registry_login
+fi
 
 if [ "$uninstall" = true ]; then
   helm_uninstall
