@@ -7,7 +7,7 @@ on:
   workflow_dispatch:  # Enable manual triggering
     inputs:
       tag:
-        description: 'Version to tag'
+        description: 'Version to tag (without the prefix v)'
         required: false
 jobs:
   tag:
@@ -21,5 +21,5 @@ jobs:
       - name: Create tag
         id: create_tag
         run: |
-          git tag -a ${{ steps.get_version.outputs.version }} -m "Tagging version ${{ steps.get_version.outputs.version }}"
-          git push origin ${{ steps.get_version.outputs.version }}
+          git tag -a v${{ github.event.inputs.tag || steps.get_version.outputs.version }} -m "Tagging version v${{ github.event.inputs.tag || steps.get_version.outputs.version }}"
+          git push origin v${{ github.event.inputs.tag || steps.get_version.outputs.version }}
