@@ -1,7 +1,6 @@
 name: Tag Main
 
 on:
-  pull_request:
   push:
     branches:
       - main
@@ -22,7 +21,5 @@ jobs:
       - name: Create tag
         id: create_tag
         run: |
-          git status
-          echo ${{ steps.get_version.outputs.version }}
-          # git tag -a ${{ steps.get_version.outputs.version }} -m "Tagging version ${{ steps.get_version.outputs.version }}"
-          # git push origin ${{ steps.get_version.outputs.version }}
+          git tag -a ${{ steps.get_version.outputs.version }} -m "Tagging version ${{ steps.get_version.outputs.version }}"
+          git push origin ${{ steps.get_version.outputs.version }}
