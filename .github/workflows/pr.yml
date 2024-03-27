@@ -25,7 +25,6 @@ jobs:
         uses: "WyriHaximus/github-action-get-previous-tag@v1.4.0"
       - name: Checking for version bump
         id: check_vbump
-        continue-on-error: true
         run: |
           LAST_TAG="${{ steps.previoustag.outputs.tag }}"
           NEW_TAG="v${{ steps.get_version.outputs.version }}"
