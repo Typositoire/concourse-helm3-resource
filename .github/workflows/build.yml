@@ -1,7 +1,6 @@
 name: Create and publish a Docker image
 
 on:
-  pull_request:
   push:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+'
@@ -35,7 +34,7 @@ jobs:
         uses: docker/build-push-action@v5
         with:
           context: .
-          push: false
+          push: true
           tags: |
             ghcr.io/typositoire/concourse-helm3-resource:${{ steps.set_docker_tag.outputs.tag }}
             ghcr.io/typositoire/concourse-helm3-resource:latest
