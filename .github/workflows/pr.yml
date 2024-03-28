@@ -1,7 +1,7 @@
 name: Check PR
 
 on:
-  pull_request:
+  pull_request_target:
     branches:
       - main
 
@@ -68,16 +68,9 @@ jobs:
             echo "msg=Version bump did not happen. ${LAST_TAG} is higher than ${NEW_TAG}" >> $GITHUB_OUTPUT
             exit 1
           fi
-      - id: pr
-        run: |
-          issue=$(gh pr list --search "${{ github.sha }}" --state open --json number --jq ".[0].number")
-          echo "issue=$issue" >>$GITHUB_OUTPUT
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       - uses: mshick/add-pr-comment@v2.8.2
         if: always()
         continue-on-error: true # Currently this resource doesn't work as is with forks
         with:
-          issue: ${{ steps.pr.outputs.issue }}
           message: |
             ${{ steps.check_if_only_ignored.outputs.msg || steps.check_vbump.outputs.msg }}
