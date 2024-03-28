@@ -79,6 +79,7 @@ jobs:
         uses: peter-evans/repository-dispatch@v2
         with:
           token: ${{ secrets.TOKENFORCOMMENT }}
+          repository: typositoire/concourse-helm3-resource
           event-type: pr-comment
           client-payload: '{"pr_number": "${{ github.event.number }}", "artifact_url": "${{ steps.artifact-upload.outputs.artifact-url }}", "run_id": "${{ github.run_id }}"}'
       
