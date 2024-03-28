@@ -4,6 +4,8 @@ on:
   push:
     branches:
       - main
+    paths:
+      - VERSION
   workflow_dispatch:  # Enable manual triggering
     inputs:
       tag:
