@@ -7,6 +7,8 @@ elif [ -n "$namespace_overwrite" ]; then
   namespace=$namespace
 fi
 
+THIOS IS BOGUS JUST TO GET SOME CHANGES
+
 setup_kubernetes() {
   payload=$1
   source=$2
