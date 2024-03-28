@@ -6,7 +6,7 @@ on:
       - main
 
 jobs:
-  check:
+  verify-version-bump:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
