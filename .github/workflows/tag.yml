@@ -1,0 +1,25 @@
+name: Tag Main
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:  # Enable manual triggering
+    inputs:
+      tag:
+        description: 'Version to tag (without the prefix v)'
+        required: false
+jobs:
+  tag:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+      - name: Get version from file
+        id: get_version
+        run: echo "version=$(cat VERSION)" >> $GITHUB_OUTPUT
+      - name: Create tag
+        id: create_tag
+        run: |
+          git tag -a v${{ github.event.inputs.tag || steps.get_version.outputs.version }} -m "Tagging version v${{ github.event.inputs.tag || steps.get_version.outputs.version }}"
+          git push origin v${{ github.event.inputs.tag || steps.get_version.outputs.version }}
