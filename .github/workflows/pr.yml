@@ -33,13 +33,11 @@ jobs:
           for file in ${ALL_CHANGED_FILES}; do
             echo "$file was changed"
           done
-
       - name: auto_pass
         if: steps.changed-files.outputs.all_modified_files_count == '0'
         id: check_if_only_ignored
         run: |
           echo "Version bump not required." # This will be used to set a label later
-
       - name: Get version from file
         if: steps.changed-files.outputs.all_modified_files_count != '0'
         id: get_version
