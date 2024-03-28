@@ -1,0 +1,21 @@
+name: Comment on pull request
+
+on:
+  repository_dispatch:
+    types: [pr-comment]
+
+jobs:
+  comment:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          name: CommentMsg
+          path: tmp/
+      - name: Display structure of downloaded files
+        run: ls -R tmp/
+      - name: PR comment with html diff 💬
+        uses: thollander/actions-comment-pull-request@v2.5.0
+        with:
+          pr_number: ${{ github.event.client_payload.pr_number }}
+          filePath: tmp/comment.txt

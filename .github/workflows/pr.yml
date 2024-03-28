@@ -1,7 +1,7 @@
 name: Check PR
 
 on:
-  pull_request_target:
+  pull_request:
     branches:
       - main
 
@@ -9,7 +9,7 @@ jobs:
   check:
     runs-on: ubuntu-latest
     permissions:
-      pull-requests: write
+      contents: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -38,7 +38,7 @@ jobs:
         if: steps.changed-files.outputs.all_modified_files_count == '0'
         id: check_if_only_ignored
         run: |
-          echo "msg=Version bump not required." >> $GITHUB_OUTPUT
+          echo "Version bump not required." > comment.txt
           exit 0
         
       - name: Get version from file
@@ -59,18 +59,25 @@ jobs:
           NEW_TAG="v${{ steps.get_version.outputs.version }}"
           RESULT=$(ci/assets/checksemver.sh ${NEW_TAG} ${LAST_TAG})
           if [ "${RESULT}" == "1" ]; then
-            echo "msg=Version bump found." >> $GITHUB_OUTPUT
+            echo "Version bump found." > comment.txt
             exit 0
           elif [ "${RESULT}" == "0" ]; then
-            echo "msg=Version bump did not happen. ${LAST_TAG} is the same as ${NEW_TAG}" >> $GITHUB_OUTPUT
+            echo "Version bump did not happen. ${LAST_TAG} is the same as ${NEW_TAG}" > comment.txt
             exit 1
           else
-            echo "msg=Version bump did not happen. ${LAST_TAG} is higher than ${NEW_TAG}" >> $GITHUB_OUTPUT
+            echo "Version bump did not happen. ${LAST_TAG} is higher than ${NEW_TAG}" > comment.txt
             exit 1
           fi
-      - uses: mshick/add-pr-comment@v2.8.2
-        if: always()
-        continue-on-error: true # Currently this resource doesn't work as is with forks
+      - name: Upload html diff ⬆️
+        id: artifact-upload
+        uses: actions/upload-artifact@v4
         with:
-          message: |
-            ${{ steps.check_if_only_ignored.outputs.msg || steps.check_vbump.outputs.msg }}
+          name: CommentMsg
+          path: comment.txt
+          retention-days: 7
+      - name: Dispatch information to repository 🗣️
+        uses: peter-evans/repository-dispatch@v2
+        with:
+          event-type: pr-comment
+          client-payload: '{"pr_number": "${{ github.event.number }}", "artifact_url": "${{ steps.artifact-upload.outputs.artifact-url }}", "run_id": "${{ github.run_id }}"}'
+      
