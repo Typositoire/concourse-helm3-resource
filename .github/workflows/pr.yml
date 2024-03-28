@@ -32,12 +32,11 @@ jobs:
           for file in ${ALL_CHANGED_FILES}; do
             echo "$file was changed"
           done
-
-          echo "msg=Version bump not required." >> $GITHUB_OUTPUT
       - name: auto_pass
         if: steps.changed-files.outputs.all_modified_files_count == '0'
         id: check_if_only_ignored
         run: |
+          echo "msg=Version bump not required." >> $GITHUB_OUTPUT
           exit 0
         
       - name: Get version from file
@@ -69,6 +68,7 @@ jobs:
           fi
       - uses: mshick/add-pr-comment@v2.8.2
         if: always()
+        continue-on-error: true # Currently this resource doesn't work as is with forks
         with:
           message: |
-            ${{ steps.list_changed_files.outputs.msg || steps.check_vbump.outputs.msg }}
+            ${{ steps.check_if_only_ignored.outputs.msg || steps.check_vbump.outputs.msg }}
