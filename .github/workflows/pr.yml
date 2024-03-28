@@ -1,13 +1,15 @@
 name: Check PR
 
 on:
-  pull_request:
+  pull_request_target:
     branches:
       - main
 
 jobs:
   check:
     runs-on: ubuntu-latest
+    permissions:
+      pull-requests: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4
@@ -69,8 +71,6 @@ jobs:
       - uses: mshick/add-pr-comment@v2.8.2
         if: always()
         continue-on-error: true # Currently this resource doesn't work as is with forks
-        env:
-          GITHUB_TOKEN: ${{ secrets.TOKENFORCOMMENT }}
         with:
           message: |
             ${{ steps.check_if_only_ignored.outputs.msg || steps.check_vbump.outputs.msg }}
