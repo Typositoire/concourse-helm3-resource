@@ -69,6 +69,7 @@ jobs:
         if: always()
         uses: actions/github-script@v6
         with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
             const message = '${{ steps.check_if_only_ignored.outputs.msg || steps.check_vbump.outputs.msg }}';
             const label = message.includes("Version bump not required") ? "no version bump required" :
