@@ -69,7 +69,8 @@ jobs:
       - uses: mshick/add-pr-comment@v2.8.2
         if: always()
         continue-on-error: true # Currently this resource doesn't work as is with forks
-        with:
+        env:
           GITHUB_TOKEN: ${{ secrets.TOKENFORCOMMENT }}
+        with:
           message: |
             ${{ steps.check_if_only_ignored.outputs.msg || steps.check_vbump.outputs.msg }}
