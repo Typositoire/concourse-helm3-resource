@@ -166,7 +166,8 @@ resources:
       - name: some_repo
         url: https://somerepo.github.io/charts
     env_vars:
-      - HELM_DRIVER=sql
+      HELM_DRIVER: sql
+      HELM_DRIVER_SQL_CONNECTION_STRING: postgresql://helm-postgres:5432/helm?user=helm&password=changeme
 ```
 
 DigitalOcean
