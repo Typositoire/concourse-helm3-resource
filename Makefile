@@ -1,5 +1,5 @@
 PROJECT = concourse-helm3
-ID = artielabs/${PROJECT}
+ID = YOUR_DOCKER_HOST_HERE/${PROJECT}
 VERSION = $(shell cat VERSION)
 
 
