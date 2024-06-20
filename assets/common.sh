@@ -205,13 +205,20 @@ setup_gcp_kubernetes() {
 setup_helm() {
   # $1 is the name of the payload file
   # $2 is the name of the source directory
-
-
   history_max=$(jq -r '.source.helm_history_max // "10"' < $1)
 
   helm_bin="helm"
 
   $helm_bin version
+
+  # Are there any environment variables? If so, let's iterate over and them set it.
+  env_vars=$(jq -c '.source.env_vars // {}' < "$1")
+  if [ "$env_vars" != "{}" ]; then
+    for key in $(echo "$env_vars" | jq -r 'keys[]'); do
+      value=$(echo "$env_vars" | jq -r --arg key "$key" '.[$key]')
+      export "$key"="$value"
+    done
+  fi
 
   helm_setup_purge_all=$(jq -r '.source.helm_setup_purge_all // "false"' <$1)
   if [ "$helm_setup_purge_all" = "true" ]; then
