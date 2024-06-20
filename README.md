@@ -1,16 +1,10 @@
-# IMPORTANT
-
-https://github.com/Typositoire/concourse-helm3-resource/issues/102
-
 # Helm Resource for Concourse
 
 ![CI Build](https://concourse.pubb-it.com/api/v1/teams/main/pipelines/concourse-helm3-resource/jobs/build-image-tag/badge)
 
 Deploy [Helm Charts](https://github.com/helm/helm) from [Concourse](https://concourse-ci.org/).
 
-Heavily based on the work of [`linkyard/concourse-helm-resource`][linkyard].
-
-[linkyard]: https://github.com/linkyard/concourse-helm-resource
+Heavily based on the work of [`linkyard/concourse-helm-resource`](https://github.com/linkyard/concourse-helm-resource).
 
 ## IMPORTANT NOTES
 
@@ -23,6 +17,7 @@ Heavily based on the work of [`linkyard/concourse-helm-resource`][linkyard].
 - Most of those have been fixed with v1.25.0 available in GHCR only
 
 ## Docker Image
+
 You can pull the resource image from [`typositoire/concourse-helm3-resource`][dockerhub]. !["Dockerhub Pull Badge"](https://img.shields.io/docker/pulls/typositoire/concourse-helm3-resource.svg "Dockerhub Pull Badge")
 
 [dockerhub]: https://hub.docker.com/repository/docker/typositoire/concourse-helm3-resource
@@ -31,7 +26,7 @@ You can pull the resource image from [`typositoire/concourse-helm3-resource`][do
 
 Starting with version 1.25.0, can you can no longer pull this resource from Docker Hub.
 
-Starting with version 1.19.1, you can pull the resource from Github [`ghcr.io/typositoire/concourse-helm3-resource`][github packages]. Docker hub will eventually stop receiving new images.
+Starting with version 1.19.1, you can pull the resource from GitHub [`ghcr.io/typositoire/concourse-helm3-resource`][github packages]. Docker hub will eventually stop receiving new images.
 
 [github packages]: https://github.com/Typositoire/concourse-helm3-resource/pkgs/container/concourse-helm3-resource
 
@@ -64,6 +59,7 @@ resource_types:
 -   `stable_repo`: _Optional_ A `"false"` (must be "string" not boolean) value will disable using a default Helm stable repo. Any other value will be used to Override default Helm stable repo URL <https://charts.helm.sh/stable>. Useful if running helm deploys without internet access.
 -   `tracing_enabled`: _Optional._ Enable extremely verbose tracing for this resource. Useful when developing the resource itself. May allow secrets to be displayed. (Default: false)
 -   `helm_setup_purge_all`: _Optional._ Uninstalls and purge every helm release. Use with extreme caution. (Default: false)
+  - `env_vars`: _Optional._ A key/value pair of environment variables that will be set before running the helm command. This is useful for using different Helm storage options.
 
 ## Source options for Google Cloud
 
@@ -169,6 +165,8 @@ resources:
     repos:
       - name: some_repo
         url: https://somerepo.github.io/charts
+    env_vars:
+      - HELM_DRIVER=sql
 ```
 
 DigitalOcean
