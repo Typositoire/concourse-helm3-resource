@@ -143,7 +143,8 @@ Deploy an helm chart
 -   `kubeconfig`: _Optional._ String containing a kubeconfig. Overrides `kubeconfig_path` and source configuration for cluster, token, and admin config.
 -   `kubeconfig_path`: _Optional._ File containing a kubeconfig. Overrides source configuration for cluster, token, and admin config.
 -   `show_diff`: _Optional._ Show the diff that is applied if upgrading an existing successful release. (Default: false)
--   `skip_missing_values:` _Optional._ Missing values files are skipped if they are specified in the values but do not exist. (Default false)
+-   `diff_opts`: _Optional._ Additional options to be appended to `helm diff` command. (Default: "")
+-   `skip_missing_values:` _Optional._ Missing values files are skipped if they are specified in the values but do not exist.(Default false)
 
 ## Example
 
@@ -304,5 +305,26 @@ jobs:
             secret_access_key: <secret_access_key>
       # region and account_id of the OCI url need to match the configuration in private_registry.ecr
       chart: oci://01234567890.dkr.ecr.us-west-2.amazonaws.com/myapp-helm-repo
+  # ...
+```
+
+If `helm` chart contains `lookup` function
+```yaml
+resources:
+- name: myapp-helm
+  type: helm
+  source:
+    env_vars:
+      HELM_DIFF_USE_INSECURE_SERVER_SIDE_DRY_RUN: true
+    #...
+jobs:
+  # ...
+  plan:
+  - put: myapp-helm
+    params:
+      chart: ...
+      show_diff: true
+      diff_opts: "--dry-run=server"
+      # ...
   # ...
 ```
