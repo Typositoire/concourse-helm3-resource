@@ -1,4 +1,4 @@
-FROM --platform=linux/amd64 alpine/helm:3.13.3
+FROM --platform=linux/amd64 alpine/helm:3.14.4
 # Helm supported version along with K8 version: https://helm.sh/docs/topics/version_skew/
 
 LABEL maintainer="Yann David (@Typositoire) <davidyann88@gmail>"
