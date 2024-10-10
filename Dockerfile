@@ -5,7 +5,7 @@ LABEL maintainer="Yann David (@Typositoire) <davidyann88@gmail>"
 
 # Versions for gcloud, kubectl, doctl, awscli
 # K8 versions: https://kubernetes.io/releases/
-ARG KUBERNETES_VERSION=1.28.7
+ARG KUBERNETES_VERSION=1.29.8
 ARG GCLOUD_VERSION=416.0.0
 ARG DOCTL_VERSION=1.57.0
 ARG AWSCLI_VERSION=2.15.14-r0
