@@ -37,6 +37,7 @@ test_logs=$(jq -r '.params.test_logs // "false"' < $payload)
 devel=$(jq -r '.params.devel // "false"' < $payload)
 force=$(jq -r '.params.force // "false"' < $payload)
 show_diff=$(jq -r '.params.show_diff // "false"' < $payload)
+dryrun=$(jq -r '.params.dryrun // "false"' < $payload)
 post_renderer=$(jq -r '.params.post_renderer // ""' < $payload)
 reuse_values=$(jq -r '.params.reuse_values // "false"' < $payload)
 reset_values=$(jq -r '.params.reset_values // "false"' < $payload)
@@ -176,6 +177,10 @@ helm_upgrade() {
 
   if [ "$debug" == "true" ]; then
     upgrade_args+=("--debug")
+    upgrade_args+=("--dry-run")
+  fi
+
+  if [ "$dryrun" == "true" ]; then
     upgrade_args+=("--dry-run")
   fi
 
