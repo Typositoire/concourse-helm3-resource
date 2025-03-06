@@ -169,7 +169,7 @@ setup_aws_kubernetes() {
     if [ -n "$role_arn" ]; then
       echo "[assume_role]
       role_arn=${role_arn}
-      source_profile=${profile:-default}" > ~/.aws/credentials
+      source_profile=${profile:-default}" >> ~/.aws/credentials
 
       aws eks update-kubeconfig --region ${region} --name ${cluster_name} --profile assume_role
     else
