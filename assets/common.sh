@@ -157,7 +157,7 @@ setup_aws_kubernetes() {
       secret_access_key=${secret_access_key}
     fi
 
-    # user credentail will be persisted on the disk under a specific profile
+    # user credentials will be persisted on the disk under a specific profile
     # in order to call `aws eks get-token`
     mkdir -p ~/.aws
     echo "[${profile:-default}]
@@ -165,7 +165,17 @@ setup_aws_kubernetes() {
     aws_secret_access_key=${secret_access_key}
     region=${region}" > ~/.aws/credentials
 
-    aws eks update-kubeconfig --region ${region} --name ${cluster_name} ${profile_opt}
+    # If the role arn is provided, we will create a separate profile for the role.
+    if [ -n "$role_arn" ]; then
+      echo "[assume_role]
+      role_arn=${role_arn}
+      source_profile=${profile:-default}" > ~/.aws/credentials
+
+      aws eks update-kubeconfig --region ${region} --name ${cluster_name} --profile assume_role
+    else
+      aws eks update-kubeconfig --region ${region} --name ${cluster_name} ${profile_opt}
+    fi
+
   else
     # defaults to use instance identity.
     echo "no role or user specified. Fallback to use identity of the instance e.g. instance profile) to set up kubeconfig"
