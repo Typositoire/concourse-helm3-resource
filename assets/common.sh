@@ -137,10 +137,24 @@ setup_aws_kubernetes() {
 
     access_key_id=$(jq -r '.source.aws.user.access_key_id // ""' < $payload)
     secret_access_key=$(jq -r '.source.aws.user.secret_access_key // ""' < $payload)
+    role_arn=$(jq -r '.source.aws.user.role_arn // ""' < $payload)
 
     if [ -z "$access_key_id" ] || [ -z "$secret_access_key" ]; then
       echo "invalid user auth payload for AWS EKS, please pass all required params"
       exit 1
+    fi
+
+    # If role_arn is provided, we need to assume the role
+    if [ -n "$role_arn" ]; then
+      $(printf "env AWS_ACCESS_KEY_ID=%s AWS_SECRET_ACCESS_KEY=%s AWS_SESSION_TOKEN=%s" \
+      $(aws sts assume-role \
+      --role-arn ${role_arn} \
+      --role-session-name ${role_session_name:-EKSAssumeRoleSession} \
+      --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]" \
+      --output text))
+    else
+      access_key_id=${access_key_id}
+      secret_access_key=${secret_access_key}
     fi
 
     # user credentail will be persisted on the disk under a specific profile
