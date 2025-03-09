@@ -144,19 +144,6 @@ setup_aws_kubernetes() {
       exit 1
     fi
 
-    # If role_arn is provided, we need to assume the role
-    if [ -n "$role_arn" ]; then
-      $(printf "env AWS_ACCESS_KEY_ID=%s AWS_SECRET_ACCESS_KEY=%s AWS_SESSION_TOKEN=%s" \
-      $(aws sts assume-role \
-      --role-arn ${role_arn} \
-      --role-session-name ${role_session_name:-EKSAssumeRoleSession} \
-      --query "Credentials.[AccessKeyId,SecretAccessKey,SessionToken]" \
-      --output text))
-    else
-      access_key_id=${access_key_id}
-      secret_access_key=${secret_access_key}
-    fi
-
     # user credentials will be persisted on the disk under a specific profile
     # in order to call `aws eks get-token`
     mkdir -p ~/.aws
